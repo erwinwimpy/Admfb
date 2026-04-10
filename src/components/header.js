@@ -31,17 +31,18 @@ export function initHeaderEvents() {
   const toggle = document.getElementById('together-toggle');
   if (toggle) {
     toggle.addEventListener('click', async () => {
-      const active = await store.toggleTogetherMode();
-      // Update UI will be handled by data-updated event, but we can reflect immediately too
-      toggle.classList.toggle('active', active);
+      const currentMode = toggle.classList.contains('active');
+      const newMode = !currentMode;
+      
+      // Optimistic UI Update
+      toggle.classList.toggle('active', newMode);
       const icon = toggle.querySelector('.together-toggle-icon');
       const label = toggle.querySelector('.together-toggle-label');
-      icon.textContent = active ? 'favorite' : 'favorite_border';
-      label.textContent = active ? 'Together!' : 'Together';
-
-      import('../utils/helpers.js').then(({ showToast }) => {
-        showToast(active ? '💕 Together Mode Aktif!' : 'Together Mode Nonaktif', 'info');
-      });
+      icon.textContent = newMode ? 'favorite' : 'favorite_border';
+      label.textContent = newMode ? 'Together!' : 'Together';
+      
+      // Background Sync
+      await store.toggleTogetherMode();
     });
   }
 

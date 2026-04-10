@@ -117,9 +117,18 @@ class Store {
 
   // --- Remote Writes ---
   async _updateCloud(updates) {
-    if (!this._userId) return;
+    if (!this._userId) {
+      console.error("Cloud Sync Error: No User ID");
+      import('../utils/helpers.js').then(h => h.showToast('⚠️ Hubungkan ke Cloud dulu!', 'error'));
+      return;
+    }
     const docRef = doc(db, 'families', this._userId);
-    await updateDoc(docRef, updates);
+    try {
+      await updateDoc(docRef, updates);
+    } catch (e) {
+      console.error("Firestore Update Failed:", e);
+      import('../utils/helpers.js').then(h => h.showToast(`❌ Gagal Simpan: ${e.code || 'Permission Denied'}`, 'error'));
+    }
   }
 
   // --- Settings ---

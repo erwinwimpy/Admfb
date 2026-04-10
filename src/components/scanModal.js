@@ -134,9 +134,16 @@ export function initScanModalEvents() {
       showToast('API Key tidak boleh kosong', 'error');
       return;
     }
+    
+    btnSaveKey.disabled = true;
+    btnSaveKey.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; border-width: 2px; margin: 0 auto;"></div>';
+    
     await store.updateSettings({ geminiApiKey: v });
-    showToast('API Key Berhasil Disimpan');
+    showToast('✅ API Key Berhasil Disimpan');
     checkKeySetup();
+    
+    btnSaveKey.disabled = false;
+    btnSaveKey.innerHTML = 'Simpan Kunci';
   });
 
   document.getElementById('btn-force-config')?.addEventListener('click', () => {
