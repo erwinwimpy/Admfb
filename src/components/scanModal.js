@@ -1,5 +1,5 @@
 // ============================================
-// CIPTA Finansial — AI Scan Modal (Gemini Vision)
+// CIPTA Finansial — AI Assistant Modal (Gemini Vision & Text)
 // ============================================
 
 import store from '../data/store.js';
@@ -15,50 +15,67 @@ export function renderScanModal() {
     <div class="modal-sheet" id="scan-modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-content">
-        <h2 class="modal-title">📷 Scan Struk / Slip Gaji</h2>
+        <h2 class="modal-title">🤖 Adam Family AI</h2>
 
-        <div id="scan-upload-area" style="
-          border: 2px dashed var(--outline-variant);
-          border-radius: var(--radius-lg);
-          padding: 40px 20px;
-          text-align: center;
-          cursor: pointer;
-          transition: all 0.2s;
-          margin-bottom: 16px;
-        ">
-          <span class="material-icons-round" style="font-size: 48px; color: var(--outline);">add_a_photo</span>
-          <p style="color: var(--on-surface-variant); margin-top: 8px; font-weight: 600;">Tap untuk ambil foto atau pilih gambar</p>
-          <p style="color: var(--outline); font-size: 12px; margin-top: 4px;">Struk belanja, slip gaji, atau nota</p>
-          <input type="file" id="scan-file-input" accept="image/*" capture="environment" style="display: none;" />
+        <div class="ai-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <button id="tab-text" class="btn btn-secondary" style="flex:1; border-color: var(--primary); color: var(--primary); background: var(--primary-container);">📝 Cerita Bebas</button>
+          <button id="tab-scan" class="btn btn-secondary" style="flex:1;">📷 Scan Foto</button>
         </div>
 
-        <!-- Preview -->
-        <div id="scan-preview" style="display: none; margin-bottom: 16px; background: var(--surface-container-high); padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--outline-variant);">
-          <img id="scan-preview-img" style="width: 100%; border-radius: 4px; height: auto; object-fit: contain;" />
+        <!-- Panel Text -->
+        <div id="panel-text">
+          <label class="form-label">Ceritakan pengeluaran Anda (Bisa Voice-to-Text):</label>
+          <textarea class="form-input" id="ai-text-input" rows="4" placeholder="Contoh: Hari ini isi bensin 150rb pakai Jago, lalu makan padang 35rb..." style="resize: vertical;"></textarea>
+          <button class="btn btn-primary btn-block" id="btn-analyze-text" style="margin-top: 12px;">
+            <span class="material-icons-round">auto_awesome</span> Minta AI Mengkategorikan
+          </button>
+        </div>
+
+        <!-- Panel Scan (Image) -->
+        <div id="panel-scan" style="display: none;">
+          <div id="scan-upload-area" style="
+            border: 2px dashed var(--outline-variant);
+            border-radius: var(--radius-lg);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+          ">
+            <span class="material-icons-round" style="font-size: 48px; color: var(--outline);">add_a_photo</span>
+            <p style="color: var(--on-surface-variant); margin-top: 8px; font-weight: 600;">Tap untuk ambil foto atau pilih gambar</p>
+            <p style="color: var(--outline); font-size: 12px; margin-top: 4px;">Struk belanja, slip gaji, atau nota</p>
+            <input type="file" id="scan-file-input" accept="image/*" capture="environment" style="display: none;" />
+          </div>
+
+          <!-- Preview -->
+          <div id="scan-preview" style="display: none; margin-bottom: 16px; background: var(--surface-container-high); padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--outline-variant);">
+            <img id="scan-preview-img" style="width: 100%; border-radius: 4px; height: auto; object-fit: contain;" />
+          </div>
         </div>
 
         <!-- AI Result -->
-        <div id="scan-result" style="display: none;">
-          <div class="ai-bubble">
-            <div class="ai-bubble-header">
-              <div class="ai-bubble-avatar"><span class="material-icons-round" style="font-size: 16px;">auto_awesome</span></div>
-              <span class="ai-bubble-name">Adam Family AI</span>
+        <div id="scan-result" style="display: none; margin-top: 16px;">
+          <div class="ai-bubble" style="background: var(--primary-container); border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) 0px; padding: 12px; margin-bottom: 16px;">
+            <div class="ai-bubble-header" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: var(--primary); font-weight: 700;">
+              <span class="material-icons-round" style="font-size: 18px;">auto_awesome</span>
+              <span>Adam Family AI</span>
             </div>
-            <div class="ai-bubble-text" id="scan-ai-text">Menganalisis gambar...</div>
+            <div class="ai-bubble-text" id="scan-ai-text" style="font-size: 14px; line-height: 1.5;">Menganalisis...</div>
           </div>
 
-          <div id="scan-parsed-data" style="display: none;"></div>
+          <div id="scan-parsed-data" style="display: none; max-height: 250px; overflow-y: auto; padding-right: 4px;"></div>
 
-          <button class="btn btn-primary btn-block" id="scan-save-btn" style="display: none; margin-top: 12px;">
+          <button class="btn btn-primary btn-block" id="scan-save-btn" style="display: none; margin-top: 16px;">
             <span class="material-icons-round">save</span>
-            Simpan Transaksi dari Scan
+            Simpan Semua Transaksi
           </button>
         </div>
 
         <!-- Loading -->
         <div id="scan-loading" style="display: none; text-align: center; padding: 20px;">
           <div style="width: 40px; height: 40px; border: 3px solid var(--outline-variant); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto;"></div>
-          <p style="color: var(--on-surface-variant); margin-top: 12px; font-weight: 600;">Adam Family AI sedang membaca struk...</p>
+          <p style="color: var(--on-surface-variant); margin-top: 12px; font-weight: 600;">AI sedang memahami maksud Anda...</p>
         </div>
 
         <style>
@@ -69,24 +86,46 @@ export function renderScanModal() {
   `;
 }
 
-let parsedData = null;
+let parsedDataArray = [];
 
 export function initScanModalEvents() {
   const backdrop = document.getElementById('scan-modal-backdrop');
   const sheet = document.getElementById('scan-modal-sheet');
   const uploadArea = document.getElementById('scan-upload-area');
   const fileInput = document.getElementById('scan-file-input');
+  
+  const tabText = document.getElementById('tab-text');
+  const tabScan = document.getElementById('tab-scan');
+  const panelText = document.getElementById('panel-text');
+  const panelScan = document.getElementById('panel-scan');
+
+  // Tabs logic
+  tabText?.addEventListener('click', () => {
+    panelText.style.display = 'block';
+    panelScan.style.display = 'none';
+    tabText.style.background = 'var(--primary-container)';
+    tabText.style.color = 'var(--primary)';
+    tabText.style.borderColor = 'var(--primary)';
+    tabScan.style.background = 'transparent';
+    tabScan.style.color = 'var(--on-surface-variant)';
+    tabScan.style.borderColor = 'transparent';
+  });
+
+  tabScan?.addEventListener('click', () => {
+    panelText.style.display = 'none';
+    panelScan.style.display = 'block';
+    tabScan.style.background = 'var(--primary-container)';
+    tabScan.style.color = 'var(--primary)';
+    tabScan.style.borderColor = 'var(--primary)';
+    tabText.style.background = 'transparent';
+    tabText.style.color = 'var(--on-surface-variant)';
+    tabText.style.borderColor = 'transparent';
+  });
 
   window.addEventListener('open-scan-modal', () => {
     backdrop?.classList.add('open');
     sheet?.classList.add('open');
-    // Reset
-    document.getElementById('scan-preview').style.display = 'none';
-    document.getElementById('scan-result').style.display = 'none';
-    document.getElementById('scan-loading').style.display = 'none';
-    document.getElementById('scan-parsed-data').style.display = 'none';
-    document.getElementById('scan-save-btn').style.display = 'none';
-    parsedData = null;
+    resetAIUI();
   });
 
   backdrop?.addEventListener('click', () => {
@@ -94,96 +133,151 @@ export function initScanModalEvents() {
     sheet?.classList.remove('open');
   });
 
-  uploadArea?.addEventListener('click', () => fileInput?.click());
+  // Text Analytics trigger
+  document.getElementById('btn-analyze-text')?.addEventListener('click', async () => {
+    const textVal = document.getElementById('ai-text-input')?.value?.trim();
+    if (!textVal) {
+      showToast('Silakan ceritakan pengeluaran Anda dulu', 'error');
+      return;
+    }
+    prepareLoading();
+    try {
+      await analyzeWithAI(textVal, null, null);
+    } catch (err) {
+      handleAIError(err);
+    }
+  });
 
+  // Image Upload trigger
+  uploadArea?.addEventListener('click', () => fileInput?.click());
   fileInput?.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Show preview
+    prepareLoading();
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const base64 = ev.target.result;
       document.getElementById('scan-preview-img').src = base64;
       document.getElementById('scan-preview').style.display = 'block';
-      document.getElementById('scan-loading').style.display = 'block';
-      document.getElementById('scan-result').style.display = 'none';
-
+      
       try {
-        await analyzeImage(base64.split(',')[1], file.type);
+        await analyzeWithAI(null, base64.split(',')[1], file.type);
       } catch (err) {
-        console.error('AI Error:', err);
-        document.getElementById('scan-loading').style.display = 'none';
-        document.getElementById('scan-result').style.display = 'block';
-        document.getElementById('scan-ai-text').textContent = '❌ Gagal menganalisis gambar. Silakan coba lagi atau input manual.';
+        handleAIError(err);
       }
     };
     reader.readAsDataURL(file);
   });
 
   document.getElementById('scan-save-btn')?.addEventListener('click', () => {
-    if (!parsedData) return;
+    if (!parsedDataArray || parsedDataArray.length === 0) return;
 
     const accounts = store.getAccounts();
-    const defaultAccount = accounts[0]?.id;
+    const state = store.getState();
+    const isTogether = state.settings.togetherMode;
 
-    store.addTransaction({
-      account_id: defaultAccount,
-      amount: parsedData.amount || 0,
-      type: parsedData.type || 'expense',
-      description: parsedData.description || 'Transaksi dari Scan',
-      parent_category: parsedData.category || 'Lainnya',
-      sub_category: parsedData.sub_category || '',
-      paid_by: store.getState().settings.togetherMode ? 'Istri' : 'Suami',
-      for_whom: store.getState().settings.togetherMode ? 'Bersama' : 'Suami',
-      is_together: store.getState().settings.togetherMode,
-      created_at: parsedData.date ? new Date(parsedData.date).toISOString() : new Date().toISOString()
+    let totalSaved = 0;
+
+    parsedDataArray.forEach(tx => {
+      // Find account by matching "account_guess" with bank_name logic
+      let matchedAccountId = accounts.find(a => a.bank_name.toLowerCase().includes('tunai'))?.id; // default tunai
+      if (tx.account_guess) {
+         const guess = tx.account_guess.toLowerCase();
+         const found = accounts.find(a => a.bank_name.toLowerCase().includes(guess));
+         if (found) matchedAccountId = found.id;
+      }
+      
+      // Fallback if somehow tunai is missing
+      if (!matchedAccountId && accounts.length > 0) matchedAccountId = accounts[0].id;
+
+      store.addTransaction({
+        account_id: matchedAccountId,
+        amount: tx.amount || 0,
+        type: tx.type || 'expense',
+        description: tx.description || 'Transaksi AI',
+        parent_category: tx.category || 'Lainnya',
+        sub_category: tx.sub_category || '',
+        paid_by: isTogether ? 'Istri' : 'Suami',
+        for_whom: isTogether ? 'Bersama' : 'Suami',
+        is_together: isTogether,
+        created_at: tx.date ? new Date(tx.date).toISOString() : new Date().toISOString()
+      });
+      totalSaved++;
     });
 
-    showToast('✅ Transaksi dari scan berhasil disimpan!');
+    showToast(`✅ ${totalSaved} transaksi dari AI berhasil disimpan!`);
     backdrop?.classList.remove('open');
     sheet?.classList.remove('open');
     window.dispatchEvent(new CustomEvent('data-updated'));
+    resetAIUI();
   });
 }
 
-async function analyzeImage(base64Data, mimeType) {
-  const categoryNames = CATEGORIES.map(c => c.name).join(', ');
-
-  const prompt = `Analisis gambar struk/nota/slip gaji berikut. Ekstrak informasi keuangan dan kembalikan dalam format JSON SAJA (tanpa markdown):
-{
-  "type": "expense" atau "income",
-  "amount": angka total (tanpa titik/koma pemisah ribuan),
-  "description": deskripsi singkat transaksi,
-  "merchant": nama toko/merchant jika ada,
-  "date": tanggal transaksi format YYYY-MM-DD jika terlihat,
-  "category": salah satu dari [${categoryNames}],
-  "sub_category": sub kategori yang sesuai,
-  "items": [{"name": "nama item", "price": harga}] jika ada rincian,
-  "summary": ringkasan dalam bahasa Indonesia (1-2 kalimat)
+function resetAIUI() {
+  document.getElementById('scan-preview').style.display = 'none';
+  document.getElementById('scan-result').style.display = 'none';
+  document.getElementById('scan-loading').style.display = 'none';
+  document.getElementById('scan-parsed-data').style.display = 'none';
+  document.getElementById('scan-save-btn').style.display = 'none';
+  document.getElementById('ai-text-input').value = '';
+  document.getElementById('scan-file-input').value = '';
+  parsedDataArray = [];
 }
 
-Jika ini slip gaji PNS, ekstrak: Gaji Pokok, Tunjangan, Potongan, dan Total Take Home Pay. Set type ke "income" dan amount ke take home pay.`;
+function prepareLoading() {
+  document.getElementById('scan-loading').style.display = 'block';
+  document.getElementById('scan-result').style.display = 'none';
+}
+
+function handleAIError(err) {
+  console.error('AI Error:', err);
+  document.getElementById('scan-loading').style.display = 'none';
+  document.getElementById('scan-result').style.display = 'block';
+  document.getElementById('scan-ai-text').innerHTML = '❌ Maaf, Gagal memproses AI. Silakan coba deskripsi yang lebih jelas.';
+  document.getElementById('scan-parsed-data').style.display = 'none';
+  document.getElementById('scan-save-btn').style.display = 'none';
+}
+
+async function analyzeWithAI(rawText, base64Data, mimeType) {
+  const categoryNames = CATEGORIES.map(c => c.name).join(', ');
+
+  const prompt = `Secara mendalam analisis ${rawText ? 'teks/cerita' : 'gambar struk'} berikut terkait pencatatan pengeluaran. Ekstrak rincian keuangan ke dalam format array JSON Object valid ([ { ... }, { ... } ]) TANPA block markdown.
+  
+Informasi Input Teks: "${rawText || 'via gambar/struk'}"
+
+Setiap item JSON merepresentasikan SATU transaksi. Harus memiliki kunci berikut:
+- "type": "expense" atau "income"
+- "amount": angka total transaksi ini (tanpa koma/huruf)
+- "description": deskripsi/nama item pengeluaran ini
+- "merchant": nama toko (jika ada)
+- "date": estimasi tanggal format YYYY-MM-DD
+- "category": wajib persis salah satu dari [${categoryNames}]
+- "sub_category": tebakan sub kategori
+- "account_guess": tebak pembayar menggunakan apa. Kembalikan salah satu keyword ini: 'jago', 'bsi', 'bri', 'tunai'. Jika tidak bisa menerka, berikan 'tunai'.
+
+Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
+[
+  { "type": "expense", "amount": 100000, "description": "Token Listrik", "category": "Rumah Tangga", "sub_category": "Listrik", "account_guess": "tunai" }
+]`;
+
+  let parts = [{ text: prompt }];
+
+  if (base64Data) {
+    parts.push({
+      inline_data: {
+        mime_type: mimeType || 'image/jpeg',
+        data: base64Data
+      }
+    });
+  }
 
   const response = await fetch(GEMINI_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: prompt },
-          {
-            inline_data: {
-              mime_type: mimeType || 'image/jpeg',
-              data: base64Data
-            }
-          }
-        ]
-      }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 1024
-      }
+      contents: [{ parts }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
     })
   });
 
@@ -194,49 +288,51 @@ Jika ini slip gaji PNS, ekstrak: Gaji Pokok, Tunjangan, Potongan, dan Total Take
   document.getElementById('scan-result').style.display = 'block';
 
   try {
-    // Try to extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsedData = JSON.parse(jsonMatch[0]);
-      document.getElementById('scan-ai-text').innerHTML = `
-        <strong>✅ Berhasil!</strong><br/>
-        ${parsedData.summary || 'Data berhasil diekstrak dari gambar.'}
-      `;
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error("No JSON Array found");
 
-      // Show parsed data
-      const parsedDiv = document.getElementById('scan-parsed-data');
-      parsedDiv.style.display = 'block';
-      parsedDiv.innerHTML = `
-        <div style="background: var(--surface-container); border-radius: var(--radius-md); padding: 12px; margin-top: 12px;">
+    parsedDataArray = JSON.parse(jsonMatch[0]);
+
+    if (!Array.isArray(parsedDataArray) || parsedDataArray.length === 0) {
+      throw new Error("Parsed data is not an array");
+    }
+
+    document.getElementById('scan-ai-text').innerHTML = `
+      <strong>✅ AI Berhasil Memahami Cerita Anda!</strong><br/>
+      Ditemukan ${parsedDataArray.length} transaksi yang diekstrak.
+    `;
+
+    const accounts = store.getAccounts();
+
+    // Show mapped boxes
+    const parsedDiv = document.getElementById('scan-parsed-data');
+    parsedDiv.style.display = 'block';
+    
+    parsedDiv.innerHTML = parsedDataArray.map(tx => {
+      let matchedBankStr = 'Tunai (Otomatis)';
+      if (tx.account_guess) {
+        const guess = tx.account_guess.toLowerCase();
+        const found = accounts.find(a => a.bank_name.toLowerCase().includes(guess));
+        if (found) matchedBankStr = found.bank_name;
+      }
+      return `
+        <div style="background: var(--surface-container); border-radius: var(--radius-md); padding: 12px; margin-top: 12px; border: 1px solid var(--outline-variant);">
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-weight: 600; color: var(--on-surface-variant);">${parsedData.type === 'income' ? '💰 Pemasukan' : '💸 Pengeluaran'}</span>
-            <span style="font-weight: 800; color: ${parsedData.type === 'income' ? 'var(--success)' : 'var(--error)'};">${formatRupiah(parsedData.amount || 0)}</span>
+            <span style="font-weight: 600; color: var(--on-surface-variant);">${tx.type === 'income' ? '💰 Pemasukan' : '💸 Pengeluaran'}</span>
+            <span style="font-weight: 800; color: ${tx.type === 'income' ? 'var(--success)' : 'var(--error)'};">${formatRupiah(tx.amount || 0)}</span>
           </div>
           <div style="font-size: 13px; color: var(--on-surface-variant);">
-            <p>📝 ${parsedData.description || '-'}</p>
-            ${parsedData.merchant ? `<p>🏪 ${parsedData.merchant}</p>` : ''}
-            <p>📂 ${parsedData.category || '-'} → ${parsedData.sub_category || '-'}</p>
-            ${parsedData.date ? `<p>📅 ${parsedData.date}</p>` : ''}
+            <p>📝 <strong>${tx.description || '-'}</strong></p>
+            <p>📂 ${tx.category || '-'} → ${tx.sub_category || '-'}</p>
+            <p>💳 Menggunakan: <strong>${matchedBankStr}</strong></p>
           </div>
-          ${parsedData.items?.length ? `
-            <div style="margin-top: 8px; border-top: 1px solid var(--outline-variant); padding-top: 8px;">
-              <p style="font-weight: 600; font-size: 12px; margin-bottom: 4px;">Rincian:</p>
-              ${parsedData.items.map(item => `
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--on-surface-variant); padding: 2px 0;">
-                  <span>${item.name}</span>
-                  <span>${formatRupiah(item.price)}</span>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
         </div>
       `;
+    }).join('');
 
-      document.getElementById('scan-save-btn').style.display = 'flex';
-    } else {
-      document.getElementById('scan-ai-text').textContent = text || 'Tidak dapat mengekstrak data dari gambar ini.';
-    }
+    document.getElementById('scan-save-btn').style.display = 'flex';
   } catch (parseErr) {
-    document.getElementById('scan-ai-text').textContent = text || 'Gagal memproses respons AI.';
+    console.error(parseErr, text);
+    handleAIError(parseErr);
   }
 }

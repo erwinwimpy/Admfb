@@ -7,8 +7,8 @@ export function renderQuickAction() {
     <div class="fab-container" id="fab-container">
       <div class="fab-actions" id="fab-actions">
         <button class="fab-action" id="fab-scan">
-          <span class="material-icons-round">photo_camera</span>
-          <span>Scan Struk</span>
+          <span class="material-icons-round">auto_awesome</span>
+          <span>Asisten AI</span>
         </button>
         <button class="fab-action" id="fab-transfer">
           <span class="material-icons-round">swap_horiz</span>
