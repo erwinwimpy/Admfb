@@ -11,7 +11,7 @@ export function renderHeader() {
   return `
     <header class="app-header" id="app-header">
       <div class="header-logo">
-        <img src="/logo.png" alt="Adam Family Budget Logo" class="header-logo-image" style="height: 36px; width: auto; object-fit: contain; margin-right: 8px;">
+        <img src="${import.meta.env.BASE_URL}logo.png" alt="Adam Family Budget Logo" class="header-logo-image" style="height: 36px; width: auto; object-fit: contain; margin-right: 8px;">
         <div class="header-logo-text" style="font-size: 18px; line-height: 1.2;">Adam Family<br><span style="font-size: 12px; color: var(--primary);">BUDGET</span></div>
       </div>
       <div class="header-actions">
@@ -38,10 +38,26 @@ export function initHeaderEvents() {
       icon.textContent = active ? 'favorite' : 'favorite_border';
       label.textContent = active ? 'Together!' : 'Together';
 
-      // Import toast dynamically
       import('../utils/helpers.js').then(({ showToast }) => {
         showToast(active ? '💕 Together Mode Aktif!' : 'Together Mode Nonaktif', 'info');
       });
+    });
+  }
+
+  const avatar = document.getElementById('profile-avatar');
+  if (avatar) {
+    avatar.addEventListener('click', () => {
+      const state = store.getState();
+      const currentUser = state.settings.userName || 'Erwin';
+      const targetUser = currentUser === 'Erwin' ? 'Bunda' : 'Erwin';
+      
+      if (confirm(`Ganti sesi dari ${currentUser} ke ${targetUser}?`)) {
+        store.updateSettings({ userName: targetUser });
+        window.dispatchEvent(new Event('data-updated'));
+        import('../utils/helpers.js').then(({ showToast }) => {
+          showToast(`Berhasil login sebagai ${targetUser}`, 'success');
+        });
+      }
     });
   }
 }
