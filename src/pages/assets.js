@@ -58,14 +58,19 @@ export function renderAssetsPage() {
 
       <!-- Emas Section -->
       <div class="asset-card" id="asset-emas">
-        <div class="asset-card-header">
-          <div class="asset-card-icon emas">
-            <span class="material-icons-round">diamond</span>
+        <div class="asset-card-header" style="justify-content: space-between;">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="asset-card-icon emas">
+              <span class="material-icons-round">diamond</span>
+            </div>
+            <div>
+              <div class="asset-card-title">Investasi Emas</div>
+              <div class="asset-card-subtitle">BSI Gold & Tring</div>
+            </div>
           </div>
-          <div>
-            <div class="asset-card-title">Investasi Emas</div>
-            <div class="asset-card-subtitle">BSI Gold & Tring</div>
-          </div>
+          <button class="btn btn-secondary" style="padding: 8px; border-radius: 50%; width: 40px; height: 40px;" onclick="window.dispatchEvent(new CustomEvent('edit-emas'))">
+            <span class="material-icons-round" style="font-size: 20px;">edit</span>
+          </button>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -100,14 +105,19 @@ export function renderAssetsPage() {
 
       <!-- KPR Section -->
       <div class="asset-card" id="asset-kpr">
-        <div class="asset-card-header">
-          <div class="asset-card-icon kpr">
-            <span class="material-icons-round">home</span>
+        <div class="asset-card-header" style="justify-content: space-between;">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="asset-card-icon kpr">
+              <span class="material-icons-round">home</span>
+            </div>
+            <div>
+              <div class="asset-card-title">KPR ${kpr.bank || 'BTN'}</div>
+              <div class="asset-card-subtitle">Kredit Pemilikan Rumah</div>
+            </div>
           </div>
-          <div>
-            <div class="asset-card-title">KPR ${kpr.bank || 'BTN'}</div>
-            <div class="asset-card-subtitle">Kredit Pemilikan Rumah</div>
-          </div>
+          <button class="btn btn-secondary" style="padding: 8px; border-radius: 50%; width: 40px; height: 40px;" onclick="window.dispatchEvent(new CustomEvent('edit-kpr'))">
+            <span class="material-icons-round" style="font-size: 20px;">edit</span>
+          </button>
         </div>
 
         <!-- Big Progress -->
@@ -137,27 +147,24 @@ export function renderAssetsPage() {
             <div style="font-size: 11px; color: var(--on-surface-variant); font-weight: 600;">Sisa Hutang</div>
             <div style="font-size: 14px; font-weight: 800; color: var(--error); margin-top: 4px;">${formatRupiah(kprRemaining, true)}</div>
           </div>
-          <div style="background: var(--surface-container); border-radius: var(--radius-md); padding: 12px;">
-            <div style="font-size: 11px; color: var(--on-surface-variant); font-weight: 600;">Cicilan/bulan</div>
-            <div style="font-size: 14px; font-weight: 800; color: var(--on-surface); margin-top: 4px;">${formatRupiah(kpr.monthly, true)}</div>
-          </div>
-          <div style="background: var(--surface-container); border-radius: var(--radius-md); padding: 12px;">
-            <div style="font-size: 11px; color: var(--on-surface-variant); font-weight: 600;">Sisa Tenor</div>
-            <div style="font-size: 14px; font-weight: 800; color: var(--on-surface); margin-top: 4px;">${kpr.remaining_months} bulan</div>
-          </div>
         </div>
       </div>
 
       <!-- Arisan Section -->
       <div class="asset-card" id="asset-arisan">
-        <div class="asset-card-header">
-          <div class="asset-card-icon arisan">
-            <span class="material-icons-round">groups</span>
+        <div class="asset-card-header" style="justify-content: space-between;">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="asset-card-icon arisan">
+              <span class="material-icons-round">groups</span>
+            </div>
+            <div>
+              <div class="asset-card-title">Arisan</div>
+              <div class="asset-card-subtitle">${arisanList.length} kelompok arisan aktif</div>
+            </div>
           </div>
-          <div>
-            <div class="asset-card-title">Arisan</div>
-            <div class="asset-card-subtitle">${arisanList.length} kelompok arisan aktif</div>
-          </div>
+          <button class="btn btn-secondary" style="padding: 8px; border-radius: 50%; width: 40px; height: 40px;" id="btn-add-arisan">
+            <span class="material-icons-round" style="font-size: 20px;">add</span>
+          </button>
         </div>
 
         ${arisanList.length === 0 ? `
@@ -165,12 +172,13 @@ export function renderAssetsPage() {
             Belum ada data arisan
           </div>
         ` : arisanList.map(arisan => `
-          <div style="background: var(--surface-container); border-radius: var(--radius-md); padding: 12px; margin-bottom: 8px;">
+          <div style="background: var(--surface-container); border-radius: var(--radius-md); padding: 12px; margin-bottom: 8px; position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <div style="font-weight: 700; font-size: var(--fs-body);">${arisan.name}</div>
-              <span class="badge" style="background: ${arisan.is_active ? 'var(--success-container)' : 'var(--surface-container-high)'}; color: ${arisan.is_active ? 'var(--success)' : 'var(--outline)'};">
-                ${arisan.is_active ? 'Aktif' : 'Selesai'}
-              </span>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <button class="btn-edit-arisan" data-id="${arisan.id}" style="padding: 4px; background: none; border: none; color: var(--primary);"><span class="material-icons-round" style="font-size: 18px;">edit</span></button>
+                <button class="btn-delete-arisan" data-id="${arisan.id}" style="padding: 4px; background: none; border: none; color: var(--error);"><span class="material-icons-round" style="font-size: 18px;">delete</span></button>
+              </div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; font-size: 12px;">
               <div>
@@ -194,10 +202,201 @@ export function renderAssetsPage() {
           </div>
         `).join('')}
       </div>
+
+      <!-- Modals for Assets -->
+      <div class="modal-backdrop" id="asset-modal-backdrop"></div>
+      
+      <!-- Modal Emas -->
+      <div class="modal-sheet" id="modal-edit-emas">
+        <div class="modal-handle"></div>
+        <div class="modal-content">
+          <h2 class="modal-title">Edit Investasi Emas</h2>
+          <form id="form-emas">
+            <div class="form-group">
+              <label class="form-label">Tabungan Emas BSI (gram)</label>
+              <input type="number" step="0.01" class="form-input" id="emas-bsi" value="${emas.bsi_gram}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Emas Tring/Fisik (gram)</label>
+              <input type="number" step="0.01" class="form-input" id="emas-tring" value="${emas.tring_gram}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Harga Emas Saat Ini (Rp/gram)</label>
+              <input type="number" class="form-input" id="emas-price" value="${emas.price_per_gram}" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Simpan Perubahan</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal KPR -->
+      <div class="modal-sheet" id="modal-edit-kpr">
+        <div class="modal-handle"></div>
+        <div class="modal-content">
+          <h2 class="modal-title">Update Status KPR</h2>
+          <form id="form-kpr">
+            <div class="form-group">
+              <label class="form-label">Nama Bank</label>
+              <input type="text" class="form-input" id="kpr-bank" value="${kpr.bank}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total Harga Rumah/Hutang Awal</label>
+              <input type="number" class="form-input" id="kpr-total" value="${kpr.total}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total yang Sudah Dibayar</label>
+              <input type="number" class="form-input" id="kpr-paid" value="${kpr.paid}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cicilan per bulan</label>
+              <input type="number" class="form-input" id="kpr-monthly" value="${kpr.monthly}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sisa Tenor (Bulan)</label>
+              <input type="number" class="form-input" id="kpr-months" value="${kpr.remaining_months}" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Simpan Perubahan</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Modal Arisan -->
+      <div class="modal-sheet" id="modal-edit-arisan">
+        <div class="modal-handle"></div>
+        <div class="modal-content">
+          <h2 class="modal-title" id="arisan-modal-title">Tambah Kelompok Arisan</h2>
+          <form id="form-arisan">
+            <input type="hidden" id="arisan-id" />
+            <div class="form-group">
+              <label class="form-label">Nama Kelompok Arisan</label>
+              <input type="text" class="form-input" id="arisan-name" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Iuran Bulanan (Rp)</label>
+              <input type="number" class="form-input" id="arisan-amount" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Total Anggota</label>
+              <input type="number" class="form-input" id="arisan-members" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Urutan Kocokan Saya</label>
+              <input type="number" class="form-input" id="arisan-turn" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Putaran Saat Ini</label>
+              <input type="number" class="form-input" id="arisan-round" value="1" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Simpan Data Arisan</button>
+          </form>
+        </div>
+      </div>
     </div>
   `;
 }
 
 export function initAssetsPageEvents() {
-  // Could add edit modals for emas/KPR values in the future
+  const backdrop = document.getElementById('asset-modal-backdrop');
+  
+  const closeAllAssetModals = () => {
+    backdrop?.classList.remove('open');
+    document.querySelectorAll('.modal-sheet').forEach(m => m.classList.remove('open'));
+  };
+
+  backdrop?.addEventListener('click', closeAllAssetModals);
+
+  // Emas Edit
+  window.addEventListener('edit-emas', () => {
+    backdrop?.classList.add('open');
+    document.getElementById('modal-edit-emas')?.classList.add('open');
+  });
+
+  document.getElementById('form-emas')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.updateEmas({
+      bsi_gram: parseFloat(document.getElementById('emas-bsi').value || 0),
+      tring_gram: parseFloat(document.getElementById('emas-tring').value || 0),
+      price_per_gram: parseInt(document.getElementById('emas-price').value || 0)
+    });
+    window.dispatchEvent(new CustomEvent('data-updated'));
+    closeAllAssetModals();
+  });
+
+  // KPR Edit
+  window.addEventListener('edit-kpr', () => {
+    backdrop?.classList.add('open');
+    document.getElementById('modal-edit-kpr')?.classList.add('open');
+  });
+
+  document.getElementById('form-kpr')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    store.updateKPR({
+        bank: document.getElementById('kpr-bank').value,
+        total: parseInt(document.getElementById('kpr-total').value || 0),
+        paid: parseInt(document.getElementById('kpr-paid').value || 0),
+        monthly: parseInt(document.getElementById('kpr-monthly').value || 0),
+        remaining_months: parseInt(document.getElementById('kpr-months').value || 0)
+    });
+    window.dispatchEvent(new CustomEvent('data-updated'));
+    closeAllAssetModals();
+  });
+
+  // Arisan Logic
+  document.getElementById('btn-add-arisan')?.addEventListener('click', () => {
+    document.getElementById('arisan-modal-title').innerText = 'Tambah Kelompok Arisan';
+    document.getElementById('arisan-id').value = '';
+    document.getElementById('form-arisan').reset();
+    backdrop?.classList.add('open');
+    document.getElementById('modal-edit-arisan')?.classList.add('open');
+  });
+
+  document.querySelectorAll('.btn-edit-arisan').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const arisan = store.getAssets().arisan.find(a => a.id === id);
+        if (arisan) {
+            document.getElementById('arisan-modal-title').innerText = 'Edit Arisan';
+            document.getElementById('arisan-id').value = arisan.id;
+            document.getElementById('arisan-name').value = arisan.name;
+            document.getElementById('arisan-amount').value = arisan.monthly_amount;
+            document.getElementById('arisan-members').value = arisan.total_members;
+            document.getElementById('arisan-turn').value = arisan.my_turn;
+            document.getElementById('arisan-round').value = arisan.current_round;
+            backdrop?.classList.add('open');
+            document.getElementById('modal-edit-arisan')?.classList.add('open');
+        }
+    });
+  });
+
+  document.querySelectorAll('.btn-delete-arisan').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if(confirm('Hapus data arisan ini?')) {
+            store.deleteArisan(btn.dataset.id);
+            window.dispatchEvent(new CustomEvent('data-updated'));
+        }
+    });
+  });
+
+  document.getElementById('form-arisan')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('arisan-id').value;
+    const data = {
+        name: document.getElementById('arisan-name').value,
+        monthly_amount: parseInt(document.getElementById('arisan-amount').value),
+        total_members: parseInt(document.getElementById('arisan-members').value),
+        my_turn: parseInt(document.getElementById('arisan-turn').value),
+        current_round: parseInt(document.getElementById('arisan-round').value),
+        is_active: true
+    };
+
+    if (id) {
+        store.updateArisan(id, data);
+    } else {
+        store.addArisan(data);
+    }
+
+    window.dispatchEvent(new CustomEvent('data-updated'));
+    closeAllAssetModals();
+  });
 }
+

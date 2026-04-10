@@ -51,12 +51,17 @@ function renderAccountCard(acc) {
           ${acc.owner_name} ${acc.is_allowance_account ? '• Pegangan' : ''}
         </div>
       </div>
-      <div style="text-align: right;">
+      <div style="text-align: right; margin-right: 8px;">
         <div style="font-weight: 800; font-size: var(--fs-body); color: var(--primary);">${formatRupiah(acc.balance)}</div>
       </div>
-      <button class="btn-delete-account" data-acc-id="${acc.id}" style="color: var(--error); padding: 8px; border-radius: 50%;" title="Hapus">
-        <span class="material-icons-round" style="font-size: 18px;">delete_outline</span>
-      </button>
+      <div style="display: flex; gap: 4px;">
+        <button class="btn-edit-account" data-acc-id="${acc.id}" style="color: var(--primary); padding: 8px; border-radius: 50%; background: none; border: none; cursor: pointer;" title="Edit">
+          <span class="material-icons-round" style="font-size: 18px;">edit</span>
+        </button>
+        <button class="btn-delete-account" data-acc-id="${acc.id}" style="color: var(--error); padding: 8px; border-radius: 50%; background: none; border: none; cursor: pointer;" title="Hapus">
+          <span class="material-icons-round" style="font-size: 18px;">delete_outline</span>
+        </button>
+      </div>
     </div>
   `;
 }
@@ -69,6 +74,7 @@ function renderAccountModal() {
       <div class="modal-content">
         <h2 class="modal-title" id="acc-modal-title">Tambah Rekening</h2>
         <form id="acc-form">
+          <input type="hidden" id="acc-id" />
           <div class="form-group">
             <label class="form-label">Nama Bank</label>
             <input type="text" class="form-input" id="acc-bank-name" placeholder="Contoh: BRI, BSI, Bank Jago" required />
@@ -76,13 +82,13 @@ function renderAccountModal() {
           <div class="form-group">
             <label class="form-label">Pemilik</label>
             <div class="chip-group" id="acc-owner-chips">
-              <button type="button" class="chip selected" data-value="Suami">Suami</button>
-              <button type="button" class="chip" data-value="Istri">Istri</button>
+              <button type="button" class="chip selected" data-value="Erwin">Erwin</button>
+              <button type="button" class="chip" data-value="Nihad">Nihad</button>
               <button type="button" class="chip" data-value="Bersama">Bersama</button>
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Saldo Awal (Rp)</label>
+            <label class="form-label">Saldo Saat Ini (Rp)</label>
             <input type="number" class="form-input" id="acc-balance" placeholder="0" min="0" inputmode="numeric" />
           </div>
           <div class="form-group">
@@ -106,11 +112,42 @@ export function initAccountsPageEvents() {
   const backdrop = document.getElementById('acc-modal-backdrop');
   const sheet = document.getElementById('acc-modal-sheet');
 
-  // Open modal
-  addBtn?.addEventListener('click', () => openAccountModal());
+  // Open modal (Add)
+  addBtn?.addEventListener('click', () => {
+    document.getElementById('acc-modal-title').innerText = 'Tambah Rekening';
+    document.getElementById('acc-id').value = '';
+    openAccountModal();
+  });
+
+  // Open modal (Edit)
+  document.querySelectorAll('.btn-edit-account').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = parseInt(btn.dataset.accId);
+      const acc = store.getAccountById(id);
+      if (acc) {
+        document.getElementById('acc-modal-title').innerText = 'Edit Rekening';
+        document.getElementById('acc-id').value = acc.id;
+        document.getElementById('acc-bank-name').value = acc.bank_name;
+        document.getElementById('acc-balance').value = acc.balance;
+        document.getElementById('acc-is-allowance').checked = acc.is_allowance_account;
+        
+        // Select chip
+        document.querySelectorAll('#acc-owner-chips .chip').forEach(c => {
+          c.classList.toggle('selected', c.dataset.value === acc.owner_name);
+        });
+        
+        openAccountModal();
+      }
+    });
+  });
 
   // Also listen for global event from bank slider
-  window.addEventListener('open-account-modal', () => openAccountModal());
+  window.addEventListener('open-account-modal', () => {
+    document.getElementById('acc-modal-title').innerText = 'Tambah Rekening';
+    document.getElementById('acc-id').value = '';
+    openAccountModal();
+  });
 
   // Close modal
   backdrop?.addEventListener('click', () => closeAccountModal());
@@ -123,11 +160,12 @@ export function initAccountsPageEvents() {
     });
   });
 
-  // Submit
+  // Submit (Add or Update)
   document.getElementById('acc-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
+    const id = document.getElementById('acc-id').value;
     const bankName = document.getElementById('acc-bank-name')?.value?.trim();
-    const owner = document.querySelector('#acc-owner-chips .chip.selected')?.dataset.value || 'Suami';
+    const owner = document.querySelector('#acc-owner-chips .chip.selected')?.dataset.value || 'Erwin';
     const balance = parseFloat(document.getElementById('acc-balance')?.value || 0);
     const isAllowance = document.getElementById('acc-is-allowance')?.checked || false;
 
@@ -136,15 +174,22 @@ export function initAccountsPageEvents() {
       return;
     }
 
-    store.addAccount({
+    const updates = {
       bank_name: bankName,
       owner_name: owner,
       balance,
       is_allowance_account: isAllowance,
       css_class: getBankClass(bankName).replace('bank-card-icon ', '')
-    });
+    };
 
-    showToast('✅ Rekening berhasil ditambahkan!');
+    if (id) {
+      store.updateAccount(parseInt(id), updates);
+      showToast('✅ Rekening berhasil diperbarui!');
+    } else {
+      store.addAccount(updates);
+      showToast('✅ Rekening berhasil ditambahkan!');
+    }
+
     closeAccountModal();
     window.dispatchEvent(new CustomEvent('data-updated'));
   });
