@@ -6,9 +6,6 @@ import store from '../data/store.js';
 import CATEGORIES from '../data/categories.js';
 import { showToast, formatRupiah } from '../utils/helpers.js';
 
-const GEMINI_API_KEY = 'AIzaSyDqFQw69x7-Bboft5GRDQvc9T5ZrDQ7Szo';
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 export function renderScanModal() {
   return `
     <div class="modal-backdrop" id="scan-modal-backdrop"></div>
@@ -17,42 +14,52 @@ export function renderScanModal() {
       <div class="modal-content">
         <h2 class="modal-title">🤖 Adam Family AI</h2>
 
-        <div class="ai-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
-          <button id="tab-text" class="btn btn-secondary" style="flex:1; border-color: var(--primary); color: var(--primary); background: var(--primary-container);">📝 Cerita Bebas</button>
-          <button id="tab-scan" class="btn btn-secondary" style="flex:1;">📷 Scan Foto</button>
+        <!-- API Key Setup (Hanya tampil jika kosong) -->
+        <div id="ai-key-config" style="display: none; background: var(--error-container); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px;">
+           <p style="font-size: 13px; color: var(--error); margin-bottom: 8px;"><b>⚠️ API Key AI Terputus</b><br/>Karena alasan keamanan dari pihak penyedia (Google), kunci bawaan telah dicabut. Untuk menggunakan fitur ini, Anda perlu membuat API Key gratis dari Google AI Studio dan memasukkannya di bawah ini.</p>
+           <input type="text" id="ai-key-input" class="form-input" placeholder="Paste API Key Gemini Anda di sini..." />
+           <p style="font-size: 11px; color: var(--error); margin-top: 4px;">Dapatkan gratis di: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="text-decoration: underline; font-weight: bold;">aistudio.google.com</a></p>
+           <button class="btn btn-primary" id="btn-save-key" style="margin-top: 8px;">Simpan Kunci di Memori HP</button>
         </div>
 
-        <!-- Panel Text -->
-        <div id="panel-text">
-          <label class="form-label">Ceritakan pengeluaran Anda (Bisa Voice-to-Text):</label>
-          <textarea class="form-input" id="ai-text-input" rows="4" placeholder="Contoh: Hari ini isi bensin 150rb pakai Jago, lalu makan padang 35rb..." style="resize: vertical;"></textarea>
-          <button class="btn btn-primary btn-block" id="btn-analyze-text" style="margin-top: 12px;">
-            <span class="material-icons-round">auto_awesome</span> Minta AI Mengkategorikan
-          </button>
-        </div>
-
-        <!-- Panel Scan (Image) -->
-        <div id="panel-scan" style="display: none;">
-          <div id="scan-upload-area" style="
-            border: 2px dashed var(--outline-variant);
-            border-radius: var(--radius-lg);
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 16px;
-          ">
-            <span class="material-icons-round" style="font-size: 48px; color: var(--outline);">add_a_photo</span>
-            <p style="color: var(--on-surface-variant); margin-top: 8px; font-weight: 600;">Tap untuk ambil foto atau pilih gambar</p>
-            <p style="color: var(--outline); font-size: 12px; margin-top: 4px;">Struk belanja, slip gaji, atau nota</p>
-            <input type="file" id="scan-file-input" accept="image/*" capture="environment" style="display: none;" />
+        <div id="ai-main-app">
+          <div class="ai-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <button id="tab-text" class="btn btn-secondary" style="flex:1; border-color: var(--primary); color: var(--primary); background: var(--primary-container);">📝 Cerita Bebas</button>
+            <button id="tab-scan" class="btn btn-secondary" style="flex:1;">📷 Scan Foto</button>
           </div>
 
-          <!-- Preview -->
-          <div id="scan-preview" style="display: none; margin-bottom: 16px; background: var(--surface-container-high); padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--outline-variant);">
-            <img id="scan-preview-img" style="width: 100%; border-radius: 4px; height: auto; object-fit: contain;" />
+          <!-- Panel Text -->
+          <div id="panel-text">
+            <label class="form-label">Ceritakan pengeluaran Anda (Bisa Voice-to-Text):</label>
+            <textarea class="form-input" id="ai-text-input" rows="4" placeholder="Contoh: Hari ini isi bensin 150rb pakai Jago, lalu makan padang 35rb..." style="resize: vertical;"></textarea>
+            <button class="btn btn-primary btn-block" id="btn-analyze-text" style="margin-top: 12px;">
+              <span class="material-icons-round">auto_awesome</span> Minta AI Mengkategorikan
+            </button>
           </div>
-        </div>
+
+          <!-- Panel Scan (Image) -->
+          <div id="panel-scan" style="display: none;">
+            <div id="scan-upload-area" style="
+              border: 2px dashed var(--outline-variant);
+              border-radius: var(--radius-lg);
+              padding: 40px 20px;
+              text-align: center;
+              cursor: pointer;
+              transition: all 0.2s;
+              margin-bottom: 16px;
+            ">
+              <span class="material-icons-round" style="font-size: 48px; color: var(--outline);">add_a_photo</span>
+              <p style="color: var(--on-surface-variant); margin-top: 8px; font-weight: 600;">Tap untuk ambil foto atau pilih gambar</p>
+              <p style="color: var(--outline); font-size: 12px; margin-top: 4px;">Struk belanja, slip gaji, atau nota</p>
+              <input type="file" id="scan-file-input" accept="image/*" capture="environment" style="display: none;" />
+            </div>
+
+            <!-- Preview -->
+            <div id="scan-preview" style="display: none; margin-bottom: 16px; background: var(--surface-container-high); padding: 8px; border-radius: var(--radius-md); border: 1px solid var(--outline-variant);">
+              <img id="scan-preview-img" style="width: 100%; border-radius: 4px; height: auto; object-fit: contain;" />
+            </div>
+          </div>
+        </div> <!-- End of AI App -->
 
         <!-- AI Result -->
         <div id="scan-result" style="display: none; margin-top: 16px;">
@@ -99,6 +106,34 @@ export function initScanModalEvents() {
   const panelText = document.getElementById('panel-text');
   const panelScan = document.getElementById('panel-scan');
 
+  // Key Registration elements
+  const configBox = document.getElementById('ai-key-config');
+  const mainApp = document.getElementById('ai-main-app');
+  const btnSaveKey = document.getElementById('btn-save-key');
+  const inputKey = document.getElementById('ai-key-input');
+
+  function checkKeySetup() {
+    const key = store.getState().settings.geminiApiKey;
+    if (!key) {
+      configBox.style.display = 'block';
+      mainApp.style.display = 'none';
+    } else {
+      configBox.style.display = 'none';
+      mainApp.style.display = 'block';
+    }
+  }
+
+  btnSaveKey?.addEventListener('click', () => {
+    const v = inputKey.value.trim();
+    if (!v) {
+      showToast('API Key tidak boleh kosong', 'error');
+      return;
+    }
+    store.updateSettings({ geminiApiKey: v });
+    showToast('API Key Berhasil Disimpan');
+    checkKeySetup();
+  });
+
   // Tabs logic
   tabText?.addEventListener('click', () => {
     panelText.style.display = 'block';
@@ -125,6 +160,7 @@ export function initScanModalEvents() {
   window.addEventListener('open-scan-modal', () => {
     backdrop?.classList.add('open');
     sheet?.classList.add('open');
+    checkKeySetup();
     resetAIUI();
   });
 
@@ -180,7 +216,6 @@ export function initScanModalEvents() {
     let totalSaved = 0;
 
     parsedDataArray.forEach(tx => {
-      // Find account by matching "account_guess" with bank_name logic
       let matchedAccountId = accounts.find(a => a.bank_name.toLowerCase().includes('tunai'))?.id; // default tunai
       if (tx.account_guess) {
          const guess = tx.account_guess.toLowerCase();
@@ -188,7 +223,6 @@ export function initScanModalEvents() {
          if (found) matchedAccountId = found.id;
       }
       
-      // Fallback if somehow tunai is missing
       if (!matchedAccountId && accounts.length > 0) matchedAccountId = accounts[0].id;
 
       store.addTransaction({
@@ -228,18 +262,37 @@ function resetAIUI() {
 function prepareLoading() {
   document.getElementById('scan-loading').style.display = 'block';
   document.getElementById('scan-result').style.display = 'none';
+  // Jika config box error sebelumnya masih tampil
+  const configBox = document.getElementById('ai-key-config');
+  if(configBox) configBox.style.display = 'none';
+  const mainApp = document.getElementById('ai-main-app');
+  if(mainApp) mainApp.style.display = 'block';
 }
 
 function handleAIError(err) {
   console.error('AI Error:', err);
   document.getElementById('scan-loading').style.display = 'none';
   document.getElementById('scan-result').style.display = 'block';
-  document.getElementById('scan-ai-text').innerHTML = '❌ Maaf, Gagal memproses AI. Silakan coba deskripsi yang lebih jelas.';
+  let errMsg = '❌ Maaf, Gagal memproses AI. Silakan coba deksripsi yang lebih jelas.';
+  if (err.message && err.message.includes('403')) {
+    errMsg = '❌ API Key tidak valid atau telah diblokir limit. Hapus dan buat key yang baru.';
+    store.updateSettings({ geminiApiKey: '' }); // reset key
+    setTimeout(() => {
+        document.getElementById('ai-key-config').style.display = 'block';
+        document.getElementById('ai-main-app').style.display = 'none';
+        document.getElementById('scan-result').style.display = 'none';
+    }, 3000);
+  }
+  document.getElementById('scan-ai-text').innerHTML = errMsg;
   document.getElementById('scan-parsed-data').style.display = 'none';
   document.getElementById('scan-save-btn').style.display = 'none';
 }
 
 async function analyzeWithAI(rawText, base64Data, mimeType) {
+  const GEMINI_API_KEY = store.getState().settings.geminiApiKey;
+  if (!GEMINI_API_KEY) throw new Error("API Key Missing");
+
+  const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   const categoryNames = CATEGORIES.map(c => c.name).join(', ');
 
   const prompt = `Secara mendalam analisis ${rawText ? 'teks/cerita' : 'gambar struk'} berikut terkait pencatatan pengeluaran. Ekstrak rincian keuangan ke dalam format array JSON Object valid ([ { ... }, { ... } ]) TANPA block markdown.
@@ -281,6 +334,11 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
     })
   });
 
+  if (!response.ok) {
+     if (response.status === 403) throw new Error("403 Forbidden: API Key Invalid or Leaked");
+     throw new Error("HTTP Error " + response.status);
+  }
+
   const data = await response.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
@@ -288,17 +346,19 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
   document.getElementById('scan-result').style.display = 'block';
 
   try {
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const jsonMatch = text.match(/\[[\s\S]*\]/) || text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("No JSON Array found");
 
-    parsedDataArray = JSON.parse(jsonMatch[0]);
+    let parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed)) parsed = [parsed];
+    parsedDataArray = parsed;
 
-    if (!Array.isArray(parsedDataArray) || parsedDataArray.length === 0) {
-      throw new Error("Parsed data is not an array");
+    if (parsedDataArray.length === 0) {
+      throw new Error("Parsed data is empty");
     }
 
     document.getElementById('scan-ai-text').innerHTML = `
-      <strong>✅ AI Berhasil Memahami Cerita Anda!</strong><br/>
+      <strong>✅ AI Berhasil Memahami!</strong><br/>
       Ditemukan ${parsedDataArray.length} transaksi yang diekstrak.
     `;
 
@@ -333,6 +393,6 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
     document.getElementById('scan-save-btn').style.display = 'flex';
   } catch (parseErr) {
     console.error(parseErr, text);
-    handleAIError(parseErr);
+    throw new Error("Parsing Error: " + parseErr.message);
   }
 }

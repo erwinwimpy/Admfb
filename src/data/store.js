@@ -17,7 +17,8 @@ const defaultState = {
     togetherMode: false,
     allowanceBudget: 1500000,
     userName: 'Erwin',
-    spouseName: 'Bunda'
+    spouseName: 'Bunda',
+    geminiApiKey: ''
   },
   categories: []
 };
