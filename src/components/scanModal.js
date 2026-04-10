@@ -51,7 +51,7 @@ export function renderScanModal() {
               <span class="material-icons-round" style="font-size: 48px; color: var(--outline);">add_a_photo</span>
               <p style="color: var(--on-surface-variant); margin-top: 8px; font-weight: 600;">Tap untuk ambil foto atau pilih gambar</p>
               <p style="color: var(--outline); font-size: 12px; margin-top: 4px;">Struk belanja, slip gaji, atau nota</p>
-              <input type="file" id="scan-file-input" accept="image/*" capture="environment" style="display: none;" />
+              <input type="file" id="scan-file-input" accept="image/*" style="display: none;" />
             </div>
 
             <!-- Preview -->
@@ -193,12 +193,20 @@ export function initScanModalEvents() {
     prepareLoading();
     const reader = new FileReader();
     reader.onload = async (ev) => {
-      const base64 = ev.target.result;
-      document.getElementById('scan-preview-img').src = base64;
+      let imageData = ev.target.result;
+      
+      // Compress image before sending to AI (Mobile reliability)
+      try {
+        imageData = await compressImage(imageData);
+      } catch (cErr) {
+        console.warn('Compression failed, using original', cErr);
+      }
+
+      document.getElementById('scan-preview-img').src = imageData;
       document.getElementById('scan-preview').style.display = 'block';
       
       try {
-        await analyzeWithAI(null, base64.split(',')[1], file.type);
+        await analyzeWithAI(null, imageData.split(',')[1], 'image/jpeg');
       } catch (err) {
         handleAIError(err);
       }
@@ -405,4 +413,33 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
     console.error(parseErr, text);
     throw new Error("Parsing Error: " + parseErr.message);
   }
+}
+
+/**
+ * Compresses and resizes image for better mobile performance and API reliability
+ */
+function compressImage(base64Str, maxWidth = 1200) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Return as JPEG with 0.8 quality
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = reject;
+  });
 }
