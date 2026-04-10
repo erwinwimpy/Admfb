@@ -260,8 +260,8 @@ export function initScanModalEvents() {
         description: tx.description || 'Transaksi AI',
         parent_category: tx.category || 'Lainnya',
         sub_category: tx.sub_category || '',
-        paid_by: isTogether ? 'Istri' : 'Suami',
-        for_whom: isTogether ? 'Bersama' : 'Suami',
+        paid_by: isTogether ? 'Nihad' : 'Erwin',
+        for_whom: isTogether ? 'Bersama' : 'Erwin',
         is_together: isTogether,
         created_at: tx.date ? new Date(tx.date).toISOString() : new Date().toISOString()
       });
