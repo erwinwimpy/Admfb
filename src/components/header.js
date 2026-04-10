@@ -48,15 +48,16 @@ export function initHeaderEvents() {
   if (avatar) {
     avatar.addEventListener('click', () => {
       const state = store.getState();
-      const currentUser = state.settings.userName || 'Erwin';
-      const targetUser = currentUser === 'Erwin' ? 'Nihad' : 'Erwin';
+      const currentUser = state.settings.userName || 'Papa';
+      const targetUser = currentUser === 'Papa' ? 'Mama' : 'Papa';
       
-      if (confirm(`Ganti sesi dari ${currentUser} ke ${targetUser}?`)) {
+      const action = prompt(`Pilih aksi untuk ${currentUser}:\n1. Ganti User ke ${targetUser}\n2. Keluar (Logout)\n\nKetik angka (1/2):`, "1");
+      
+      if (action === "1") {
         store.updateSettings({ userName: targetUser });
         window.dispatchEvent(new Event('data-updated'));
-        import('../utils/helpers.js').then(({ showToast }) => {
-          showToast(`Berhasil login sebagai ${targetUser}`, 'success');
-        });
+      } else if (action === "2") {
+        window.dispatchEvent(new Event('logout'));
       }
     });
   }

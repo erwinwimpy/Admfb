@@ -1,8 +1,23 @@
 // ============================================
-// CIPTA Finansial — Data Store (localStorage)
+// CIPTA Finansial — Data Store (Cloud Sync)
 // ============================================
 
-const STORAGE_KEY = 'cipta_finansial_data';
+import { auth, db } from './firebase.js';
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
+  onSnapshot, 
+  updateDoc, 
+  arrayUnion, 
+  arrayRemove,
+  collection,
+  query,
+  orderBy,
+  limit
+} from 'firebase/firestore';
+
+const LOCAL_STORAGE_KEY = 'cipta_finansial_data';
 
 const defaultState = {
   family: null,
@@ -13,21 +28,20 @@ const defaultState = {
     allowanceBudget: 1500000,
     transportBudget: 600000,
     anakBudget: 800000,
-    userName: 'Erwin',
-    spouseName: 'Nihad',
+    userName: 'Papa',
+    spouseName: 'Mama',
     geminiApiKey: ''
   },
-  // Klasifikasi Aturan 50/30/20
   budgetRules: {
     needs: ['Rumah Tangga', 'Transportasi', 'Pendidikan Anak', 'Kesehatan', 'Cicilan'],
-    wants: ['Hiburan', 'Pakaian & Fashion', 'Makanan & Minuman'], // Makanan & Minuman will be split in logic
+    wants: ['Hiburan', 'Pakaian & Fashion', 'Makanan & Minuman'],
     savings: ['Investasi', 'Sosial & Ibadah']
   },
   assets: {
     emas: { bsi_gram: 0, tring_gram: 0, price_per_gram: 1650000 },
     kpr: { total: 0, paid: 0, monthly: 0, bank: '', remaining_months: 0 },
     arisan: [],
-    custom: [] // Fitur aset baru
+    custom: []
   },
   categories: []
 };
@@ -35,29 +49,49 @@ const defaultState = {
 class Store {
   constructor() {
     this._listeners = [];
-    this._state = this._load();
+    this._state = { ...defaultState };
+    this._unsubscribe = null;
+    this._userId = null;
+    
+    // Check initial local data for migration
+    this._localData = this._loadLocal();
   }
 
-  _load() {
+  _loadLocal() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return { ...defaultState, ...parsed };
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  async sync(user) {
+    if (!user) {
+      this._state = { ...defaultState };
+      this._userId = null;
+      if (this._unsubscribe) this._unsubscribe();
+      this._notify();
+      return;
+    }
+
+    this._userId = user.uid;
+    const docRef = doc(db, 'families', user.uid);
+    
+    // Initial load & check for migration
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) {
+      // First time user, migrate local data if exists
+      const initialState = this._localData || defaultState;
+      await setDoc(docRef, initialState);
+      localStorage.removeItem(LOCAL_STORAGE_KEY); // Clean up after migration
+    }
+
+    // Subscribe to real-time updates
+    this._unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        this._state = { ...defaultState, ...snap.data() };
+        this._notify();
       }
-    } catch (e) {
-      console.warn('Failed to load state', e);
-    }
-    return { ...defaultState };
-  }
-
-  _save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this._state));
-    } catch (e) {
-      console.warn('Failed to save state', e);
-    }
-    this._notify();
+    });
   }
 
   _notify() {
@@ -75,111 +109,110 @@ class Store {
     return this._state;
   }
 
-  // --- Family ---
-  setFamily(family) {
-    this._state.family = family;
-    this._save();
+  // --- Remote Writes ---
+  async _updateCloud(updates) {
+    if (!this._userId) return;
+    const docRef = doc(db, 'families', this._userId);
+    await updateDoc(docRef, updates);
   }
 
   // --- Settings ---
-  updateSettings(updates) {
-    this._state.settings = { ...this._state.settings, ...updates };
-    this._save();
+  async updateSettings(updates) {
+    const newSettings = { ...this._state.settings, ...updates };
+    await this._updateCloud({ settings: newSettings });
   }
 
-  toggleTogetherMode() {
-    this._state.settings.togetherMode = !this._state.settings.togetherMode;
-    this._save();
-    return this._state.settings.togetherMode;
+  async toggleTogetherMode() {
+    const newMode = !this._state.settings.togetherMode;
+    await this._updateCloud({ 'settings.togetherMode': newMode });
+    return newMode;
   }
 
   // --- Accounts ---
-  addAccount(account) {
+  async addAccount(account) {
     const maxId = this._state.accounts.reduce((max, a) => Math.max(max, a.id || 0), 0);
     const id = maxId + 1;
-    this._state.accounts.push({ id, ...account });
-    this._save();
+    const newAccounts = [...this._state.accounts, { id, ...account }];
+    await this._updateCloud({ accounts: newAccounts });
     return id;
   }
 
-  updateAccount(id, updates) {
-    const idx = this._state.accounts.findIndex(a => a.id === id);
-    if (idx !== -1) {
-      this._state.accounts[idx] = { ...this._state.accounts[idx], ...updates };
-      this._save();
-    }
+  async updateAccount(id, updates) {
+    const newAccounts = this._state.accounts.map(a => a.id === id ? { ...a, ...updates } : a);
+    await this._updateCloud({ accounts: newAccounts });
   }
 
-  deleteAccount(id) {
-    this._state.accounts = this._state.accounts.filter(a => a.id !== id);
-    this._save();
+  async deleteAccount(id) {
+    const newAccounts = this._state.accounts.filter(a => a.id !== id);
+    await this._updateCloud({ accounts: newAccounts });
   }
 
   getAccounts() {
     return this._state.accounts;
   }
 
-  getAccountById(id) {
-    return this._state.accounts.find(a => a.id === id);
-  }
-
   // --- Transactions ---
-  addTransaction(tx) {
-    const id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+  async addTransaction(tx) {
+    const id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36);
     const newTx = { id, created_at: new Date().toISOString(), ...tx };
-    this._state.transactions.unshift(newTx);
+    
+    // We update the local state optimistically or wait for snapshot? 
+    // Best to update cloud and let snapshot update UI.
+    const newTransactions = [newTx, ...this._state.transactions];
+    const newAccounts = [...this._state.accounts];
 
-    // Update account balances
-    if (tx.type === 'income') {
-      this._updateAccountBalance(tx.account_id, tx.amount);
-    } else if (tx.type === 'expense') {
-      this._updateAccountBalance(tx.account_id, -tx.amount);
-    } else if (tx.type === 'transfer') {
-      this._updateAccountBalance(tx.account_id, -tx.amount);
-      if (tx.to_account_id) {
-        this._updateAccountBalance(tx.to_account_id, tx.amount);
-      }
+    // Update account balances logic (same as before)
+    const updateBal = (accId, delta) => {
+       const acc = newAccounts.find(a => a.id === accId);
+       if (acc) acc.balance = (acc.balance || 0) + delta;
+    };
+
+    if (tx.type === 'income') updateBal(tx.account_id, tx.amount);
+    else if (tx.type === 'expense') updateBal(tx.account_id, -tx.amount);
+    else if (tx.type === 'transfer') {
+      updateBal(tx.account_id, -tx.amount);
+      if (tx.to_account_id) updateBal(tx.to_account_id, tx.amount);
     }
 
-    this._save();
+    await this._updateCloud({ 
+      transactions: newTransactions,
+      accounts: newAccounts
+    });
     return id;
   }
 
-  _updateAccountBalance(accountId, delta) {
-    const acc = this._state.accounts.find(a => a.id === accountId);
-    if (acc) {
-      acc.balance = (acc.balance || 0) + delta;
-    }
-  }
-
-  deleteTransaction(id) {
+  async deleteTransaction(id) {
     const tx = this._state.transactions.find(t => t.id === id);
-    if (tx) {
-      // Reverse balance changes
-      if (tx.type === 'income') {
-        this._updateAccountBalance(tx.account_id, -tx.amount);
-      } else if (tx.type === 'expense') {
-        this._updateAccountBalance(tx.account_id, tx.amount);
-      } else if (tx.type === 'transfer') {
-        this._updateAccountBalance(tx.account_id, tx.amount);
-        if (tx.to_account_id) {
-          this._updateAccountBalance(tx.to_account_id, -tx.amount);
-        }
-      }
-      this._state.transactions = this._state.transactions.filter(t => t.id !== id);
-      this._save();
+    if (!tx) return;
+
+    const newTransactions = this._state.transactions.filter(t => t.id !== id);
+    const newAccounts = [...this._state.accounts];
+    const updateBal = (accId, delta) => {
+       const acc = newAccounts.find(a => a.id === accId);
+       if (acc) acc.balance = (acc.balance || 0) + delta;
+    };
+
+    if (tx.type === 'income') updateBal(tx.account_id, -tx.amount);
+    else if (tx.type === 'expense') updateBal(tx.account_id, tx.amount);
+    else if (tx.type === 'transfer') {
+      updateBal(tx.account_id, tx.amount);
+      if (tx.to_account_id) updateBal(tx.to_account_id, -tx.amount);
     }
+
+    await this._updateCloud({ 
+      transactions: newTransactions,
+      accounts: newAccounts
+    });
   }
 
   getTransactions(filters = {}) {
     let txs = [...this._state.transactions];
-
     if (filters.type) txs = txs.filter(t => t.type === filters.type);
     if (filters.paid_by) txs = txs.filter(t => t.paid_by === filters.paid_by);
     if (filters.for_whom) txs = txs.filter(t => t.for_whom === filters.for_whom);
     if (filters.account_id) txs = txs.filter(t => t.account_id === filters.account_id);
     if (filters.parent_category) txs = txs.filter(t => t.parent_category === filters.parent_category);
-    if (filters.month) {
+    if (filters.month !== undefined) {
       txs = txs.filter(t => {
         const d = new Date(t.created_at);
         return d.getMonth() === filters.month && d.getFullYear() === (filters.year || new Date().getFullYear());
@@ -189,11 +222,9 @@ class Store {
       const q = filters.search.toLowerCase();
       txs = txs.filter(t =>
         (t.description || '').toLowerCase().includes(q) ||
-        (t.parent_category || '').toLowerCase().includes(q) ||
-        (t.sub_category || '').toLowerCase().includes(q)
+        (t.parent_category || '').toLowerCase().includes(q)
       );
     }
-
     return txs;
   }
 
@@ -205,26 +236,48 @@ class Store {
   }
 
   // --- Assets ---
-  updateAssets(updates) {
-    this._state.assets = { ...this._state.assets, ...updates };
-    this._save();
+  async updateEmas(updates) {
+    const newEmas = { ...this._state.assets.emas, ...updates };
+    await this._updateCloud({ 'assets.emas': newEmas });
   }
 
-  updateEmas(updates) {
-    this._state.assets.emas = { ...this._state.assets.emas, ...updates };
-    this._save();
+  async updateKPR(updates) {
+    const newKPR = { ...this._state.assets.kpr, ...updates };
+    await this._updateCloud({ 'assets.kpr': newKPR });
   }
 
-  updateKPR(updates) {
-    this._state.assets.kpr = { ...this._state.assets.kpr, ...updates };
-    this._save();
-  }
-
-  addArisan(arisan) {
+  async addArisan(arisan) {
     const id = Date.now();
-    this._state.assets.arisan.push({ id, ...arisan });
-    this._save();
+    const newArisan = [...this._state.assets.arisan, { id, ...arisan }];
+    await this._updateCloud({ 'assets.arisan': newArisan });
     return id;
+  }
+
+  async updateArisan(id, data) {
+    const newList = this._state.assets.arisan.map(a => a.id === id ? { ...a, ...data } : a);
+    await this._updateCloud({ 'assets.arisan': newList });
+  }
+
+  async deleteArisan(id) {
+    const newList = this._state.assets.arisan.filter(a => a.id !== id);
+    await this._updateCloud({ 'assets.arisan': newList });
+  }
+
+  async addCustomAsset(asset) {
+    const id = Date.now().toString(36);
+    const newList = [...this._state.assets.custom, { id, ...asset }];
+    await this._updateCloud({ 'assets.custom': newList });
+    return id;
+  }
+
+  async updateCustomAsset(id, updates) {
+    const newList = this._state.assets.custom.map(a => a.id === id ? { ...a, ...updates } : a);
+    await this._updateCloud({ 'assets.custom': newList });
+  }
+
+  async deleteCustomAsset(id) {
+    const newList = this._state.assets.custom.filter(a => a.id !== id);
+    await this._updateCloud({ 'assets.custom': newList });
   }
 
   getAssets() {
@@ -250,14 +303,16 @@ class Store {
 
   getAllowanceSpent() {
     const now = new Date();
+    const userName = this._state.settings.userName;
     return this.getTransactionsByMonth(now.getFullYear(), now.getMonth())
-      .filter(t => t.type === 'expense' && t.paid_by === 'Suami')
+      .filter(t => t.type === 'expense' && t.paid_by === userName)
       .reduce((sum, t) => sum + t.amount, 0);
   }
 
   getDanaPusatBalance() {
+    const spouse = this._state.settings.spouseName;
     return this._state.accounts
-      .filter(a => a.owner_name === 'Istri' || a.owner_name === 'Bersama')
+      .filter(a => a.owner_name === spouse || a.owner_name === 'Bersama')
       .reduce((sum, a) => sum + (a.balance || 0), 0);
   }
 
@@ -283,88 +338,48 @@ class Store {
     const now = new Date();
     const txs = this.getTransactionsByMonth(now.getFullYear(), now.getMonth()).filter(t => t.type === 'expense');
     const rules = this._state.budgetRules;
-    
     let needs = 0, wants = 0, savings = 0;
-    
     txs.forEach(t => {
       const cat = t.parent_category;
       const sub = t.sub_category || '';
-      
-      if (rules.needs.includes(cat)) {
-        needs += t.amount;
-      } else if (rules.savings.includes(cat)) {
-        savings += t.amount;
-      } else if (rules.wants.includes(cat)) {
-        // Special case for Food: Groceries/Harian = Needs, Outside/Cafe = Wants
-        if (cat === 'Makanan & Minuman') {
-          if (['Makan di Luar', 'Cemilan', 'Kopi & Minuman'].includes(sub)) {
-            wants += t.amount;
-          } else {
-            needs += t.amount;
-          }
-        } else {
-          wants += t.amount;
-        }
-      } else {
-        needs += t.amount; // Default to needs for safety
-      }
+      if (rules.needs.includes(cat)) { needs += t.amount; }
+      else if (rules.savings.includes(cat)) { savings += t.amount; }
+      else if (rules.wants.includes(cat)) {
+        if (cat === 'Makanan & Minuman' && ['Makan di Luar', 'Cemilan', 'Kopi & Minuman'].includes(sub)) wants += t.amount;
+        else needs += t.amount;
+      } else needs += t.amount;
     });
-
     const total = needs + wants + savings;
     return { needs, wants, savings, total };
   }
 
-  // --- Custom Assets ---
-  addCustomAsset(asset) {
-    const id = Date.now().toString(36);
-    this._state.assets.custom.push({ id, ...asset });
-    this._save();
-    return id;
-  }
-
-  updateCustomAsset(id, updates) {
-    const idx = this._state.assets.custom.findIndex(a => a.id === id);
-    if (idx !== -1) {
-      this._state.assets.custom[idx] = { ...this._state.assets.custom[idx], ...updates };
-      this._save();
-    }
-  }
-
-  deleteCustomAsset(id) {
-    this._state.assets.custom = this._state.assets.custom.filter(a => a.id !== id);
-    this._save();
-  }
-
-  // --- Quick Payment Helper ---
-  payAssetMonthly(type, id, accountId) {
+  async payAssetMonthly(type, id, accountId) {
     const state = this._state;
-    let amount = 0;
-    let desc = "";
-    let cat = "Cicilan";
+    let amount = 0, desc = "", cat = "Cicilan";
 
     if (type === 'kpr') {
       amount = state.assets.kpr.monthly;
       desc = `Cicilan KPR ${state.assets.kpr.bank} (Bulan ini)`;
-      this.updateKPR({ paid: state.assets.kpr.paid + amount, remaining_months: state.assets.kpr.remaining_months - 1 });
+      await this.updateKPR({ paid: state.assets.kpr.paid + amount, remaining_months: state.assets.kpr.remaining_months - 1 });
     } else if (type === 'arisan') {
       const arisan = state.assets.arisan.find(a => a.id === id);
       if (arisan) {
         amount = arisan.monthly_amount;
         desc = `Iuran Arisan ${arisan.name}`;
         cat = "Sosial & Ibadah";
-        this.updateArisan(id, { current_round: arisan.current_round + 1 });
+        await this.updateArisan(id, { current_round: arisan.current_round + 1 });
       }
     } else if (type === 'custom') {
       const asset = state.assets.custom.find(a => a.id === id);
       if (asset) {
         amount = asset.monthly_amount || 0;
         desc = `Cicilan ${asset.name}`;
-        this.updateCustomAsset(id, { paid: (asset.paid || 0) + amount });
+        await this.updateCustomAsset(id, { paid: (asset.paid || 0) + amount });
       }
     }
 
     if (amount > 0) {
-      this.addTransaction({
+      await this.addTransaction({
         account_id: accountId,
         amount,
         type: 'expense',
@@ -376,11 +391,10 @@ class Store {
     }
   }
 
-  // --- Reset ---
-  reset() {
-    this._state = JSON.parse(JSON.stringify(defaultState));
-    localStorage.removeItem(STORAGE_KEY);
-    this._notify();
+  async reset() {
+    if (this._userId) {
+      await setDoc(doc(db, 'families', this._userId), defaultState);
+    }
   }
 }
 

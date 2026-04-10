@@ -3,7 +3,6 @@
 // ============================================
 
 import router from './router.js';
-import store from './data/store.js';
 import { seedData } from './data/seed.js';
 import { renderHeader, initHeaderEvents } from './components/header.js';
 import { renderBottomNav, updateActiveNav } from './components/bottomNav.js';
@@ -17,6 +16,10 @@ import { renderAccountsPage, initAccountsPageEvents } from './pages/accounts.js'
 import { renderAssetsPage, initAssetsPageEvents } from './pages/assets.js';
 import { renderInsightsPage, initInsightsPageEvents } from './pages/insights.js';
 import { renderSettingsPage, initSettingsPageEvents } from './pages/settings.js';
+import { renderLoginPage, initLoginPageEvents } from './pages/login.js';
+import { auth } from './data/firebase.js';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import store from './data/store.js';
 
 const app = document.getElementById('app');
 
@@ -27,11 +30,40 @@ const pages = {
   '/accounts': { render: renderAccountsPage, init: initAccountsPageEvents },
   '/assets': { render: renderAssetsPage, init: initAssetsPageEvents },
   '/insights': { render: renderInsightsPage, init: initInsightsPageEvents },
-  '/settings': { render: renderSettingsPage, init: initSettingsPageEvents }
+  '/settings': { render: renderSettingsPage, init: initSettingsPageEvents },
+  '/login': { render: renderLoginPage, init: initLoginPageEvents }
 };
+
+// --- Auth Guard & Synchronization ---
+let isAuthInit = false;
+
+onAuthStateChanged(auth, async (user) => {
+  const currentPath = window.location.hash.slice(1) || '/';
+  
+  if (user) {
+    // Authenticated
+    await store.sync(user);
+    if (currentPath === '/login') {
+      router.navigate('/');
+    } else {
+      renderPage(currentPath);
+    }
+  } else {
+    // Not Authenticated
+    store.sync(null);
+    router.navigate('/login');
+  }
+  isAuthInit = true;
+});
 
 function renderPage(path) {
   const page = pages[path] || pages['/'];
+
+  if (path === '/login') {
+    app.innerHTML = page.render();
+    initLoginPageEvents();
+    return;
+  }
 
   app.innerHTML = `
     ${renderHeader()}
@@ -56,21 +88,37 @@ function renderPage(path) {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-// Setup routes
-Object.keys(pages).forEach(path => {
-  router.addRoute(path, renderPage);
+// App Entry Init
+window.addEventListener('DOMContentLoaded', () => {
+  if (!isAuthInit) {
+    app.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:80vh;"><div class="spinner-container"><div class="spinner"></div></div></div>';
+  }
+  
+  // Custom logout event
+  window.addEventListener('logout', async () => {
+    if (confirm('Keluar dari akun keluarga?')) {
+      await signOut(auth);
+    }
+  });
+
+  router.start();
 });
 
-// Listen for data changes to refresh current page
+window.addEventListener('popstate', () => {
+  const user = auth.currentUser;
+  const path = window.location.hash.slice(1) || '/';
+  if (!user && path !== '/login') {
+    router.navigate('/login');
+  } else {
+    renderPage(path);
+  }
+});
+
 window.addEventListener('data-updated', () => {
   const currentPath = router.getCurrentPath();
   renderPage(currentPath);
 });
 
 export function initApp() {
-  // Seed sample data
-  seedData();
-
-  // Start router
-  router.start();
+  // Start router handled by DOMContentLoaded
 }

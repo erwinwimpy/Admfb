@@ -232,7 +232,29 @@ ul, ol {
   justify-content: space-between;
   padding: 0 var(--sp-md);
   z-index: var(--z-sticky);
-  transition: background var(--trans-normal);
+  transition: background-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+/* Auth Spinner */
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--surface-container);
+  border-top: 4px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .header-logo {
