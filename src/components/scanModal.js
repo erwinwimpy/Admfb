@@ -318,6 +318,7 @@ function handleAIError(err) {
 }
 
 async function analyzeWithAI(rawText, base64Data, mimeType) {
+  const state = store.getState();
   const GEMINI_API_KEY = state.settings.geminiApiKey;
   if (!GEMINI_API_KEY) throw new Error("API Key Missing");
 
