@@ -12,7 +12,12 @@ export function renderScanModal() {
     <div class="modal-sheet" id="scan-modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-content">
-        <h2 class="modal-title">🤖 Adam Family AI</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 class="modal-title" style="margin-bottom: 0;">🤖 Adam Family AI</h2>
+          <button id="btn-force-config" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">
+            <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">settings</span> Ganti Key
+          </button>
+        </div>
 
         <!-- API Key Setup (Hanya tampil jika kosong) -->
         <div id="ai-key-config" style="display: none; background: var(--error-container); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px;">
@@ -132,6 +137,13 @@ export function initScanModalEvents() {
     store.updateSettings({ geminiApiKey: v });
     showToast('API Key Berhasil Disimpan');
     checkKeySetup();
+  });
+
+  document.getElementById('btn-force-config')?.addEventListener('click', () => {
+    configBox.style.display = 'block';
+    mainApp.style.display = 'none';
+    inputKey.value = store.getState().settings.geminiApiKey || '';
+    inputKey.focus();
   });
 
   // Tabs logic
@@ -290,14 +302,15 @@ function handleAIError(err) {
   document.getElementById('scan-loading').style.display = 'none';
   document.getElementById('scan-result').style.display = 'block';
   let errMsg = '❌ Maaf, Gagal memproses AI. Silakan coba deksripsi yang lebih jelas.';
-  if (err.message && (err.message.includes('403') || err.message.includes('leaked'))) {
-    errMsg = '❌ API Key ini telah DIBLOKIR/DICABUT oleh Google karena dianggap bocor (Leaked Key). Silakan buat API Key BARU di Google AI Studio dan jangan berikan kepada siapapun di chat publik.';
-    store.updateSettings({ geminiApiKey: '' }); // reset key
-    setTimeout(() => {
-        document.getElementById('ai-key-config').style.display = 'block';
-        document.getElementById('ai-main-app').style.display = 'none';
-        document.getElementById('scan-result').style.display = 'none';
-    }, 3000);
+  if (err.message && (err.message.includes('403') || err.message.includes('leaked') || err.message.includes('Forbidden'))) {
+    errMsg = `
+      <b>❌ Akses Ditolak (API Key Bermasalah)</b><br/>
+      Kunci AI Anda saat ini sudah tidak aktif atau dianggap bocor oleh Google.<br/><br/>
+      <button class="btn btn-primary" onclick="document.getElementById('btn-force-config').click()" style="padding: 8px 16px; font-size: 12px; height: auto;">
+        Klik di sini untuk Memasukkan Key Baru
+      </button>
+    `;
+    store.updateSettings({ geminiApiKey: '' }); 
   }
   document.getElementById('scan-ai-text').innerHTML = errMsg;
   document.getElementById('scan-parsed-data').style.display = 'none';
