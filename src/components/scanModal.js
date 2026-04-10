@@ -292,7 +292,7 @@ async function analyzeWithAI(rawText, base64Data, mimeType) {
   const GEMINI_API_KEY = store.getState().settings.geminiApiKey;
   if (!GEMINI_API_KEY) throw new Error("API Key Missing");
 
-  const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   const categoryNames = CATEGORIES.map(c => c.name).join(', ');
 
   const prompt = `Secara mendalam analisis ${rawText ? 'teks/cerita' : 'gambar struk'} berikut terkait pencatatan pengeluaran. Ekstrak rincian keuangan ke dalam format array JSON Object valid ([ { ... }, { ... } ]) TANPA block markdown.
