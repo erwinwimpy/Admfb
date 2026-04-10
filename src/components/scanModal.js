@@ -225,8 +225,16 @@ export function initScanModalEvents() {
       
       if (!matchedAccountId && accounts.length > 0) matchedAccountId = accounts[0].id;
 
+      let toMatchedAccountId = null;
+      if (tx.type === 'transfer' && tx.to_account_guess) {
+         const tGuess = tx.to_account_guess.toLowerCase();
+         const tFound = accounts.find(a => a.bank_name.toLowerCase().includes(tGuess));
+         if (tFound) toMatchedAccountId = tFound.id;
+      }
+
       store.addTransaction({
         account_id: matchedAccountId,
+        to_account_id: toMatchedAccountId,
         amount: tx.amount || 0,
         type: tx.type || 'expense',
         description: tx.description || 'Transaksi AI',
@@ -300,18 +308,20 @@ async function analyzeWithAI(rawText, base64Data, mimeType) {
 Informasi Input Teks: "${rawText || 'via gambar/struk'}"
 
 Setiap item JSON merepresentasikan SATU transaksi. Harus memiliki kunci berikut:
-- "type": "expense" atau "income"
+- "type": "expense", "income", atau "transfer"
 - "amount": angka total transaksi ini (tanpa koma/huruf)
-- "description": deskripsi/nama item pengeluaran ini
+- "description": deskripsi/nama item transaksi ini
 - "merchant": nama toko (jika ada)
 - "date": estimasi tanggal format YYYY-MM-DD
-- "category": wajib persis salah satu dari [${categoryNames}]
+- "category": Jika expense wajib persis salah satu dari [${categoryNames}]. Jika income isi "Gaji" atau "Pendapatan". Jika transfer isi "Mutasi".
 - "sub_category": tebakan sub kategori
-- "account_guess": tebak pembayar menggunakan apa. Kembalikan salah satu keyword ini: 'jago', 'bsi', 'bri', 'tunai'. Jika tidak bisa menerka, berikan 'tunai'.
+- "account_guess": tebak rekening SUMBER uang. Kembalikan salah satu keyword: 'jago', 'bsi', 'bri', 'tunai'.
+- "to_account_guess": (Khusus jika type="transfer") tebak rekening TUJUAN uang.
 
 Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
 [
-  { "type": "expense", "amount": 100000, "description": "Token Listrik", "category": "Rumah Tangga", "sub_category": "Listrik", "account_guess": "tunai" }
+  { "type": "income", "amount": 4000000, "description": "Gaji Bulanan", "category": "Gaji", "account_guess": "bri" },
+  { "type": "transfer", "amount": 1500000, "description": "Mutasi ke Jago", "category": "Mutasi", "account_guess": "bri", "to_account_guess": "jago" }
 ]`;
 
   let parts = [{ text: prompt }];
@@ -378,13 +388,13 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
       return `
         <div style="background: var(--surface-container); border-radius: var(--radius-md); padding: 12px; margin-top: 12px; border: 1px solid var(--outline-variant);">
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-weight: 600; color: var(--on-surface-variant);">${tx.type === 'income' ? '💰 Pemasukan' : '💸 Pengeluaran'}</span>
-            <span style="font-weight: 800; color: ${tx.type === 'income' ? 'var(--success)' : 'var(--error)'};">${formatRupiah(tx.amount || 0)}</span>
+            <span style="font-weight: 600; color: var(--on-surface-variant);">${tx.type === 'income' ? '💰 Pemasukan' : tx.type === 'transfer' ? '🔁 Transfer' : '💸 Pengeluaran'}</span>
+            <span style="font-weight: 800; color: ${tx.type === 'income' ? 'var(--success)' : tx.type === 'transfer' ? 'var(--primary)' : 'var(--error)'};">${formatRupiah(tx.amount || 0)}</span>
           </div>
           <div style="font-size: 13px; color: var(--on-surface-variant);">
             <p>📝 <strong>${tx.description || '-'}</strong></p>
             <p>📂 ${tx.category || '-'} → ${tx.sub_category || '-'}</p>
-            <p>💳 Menggunakan: <strong>${matchedBankStr}</strong></p>
+            <p>💳 Menggunakan: <strong>${matchedBankStr} ${tx.to_account_guess ? ' ➡️ ' + tx.to_account_guess.toUpperCase() : ''}</strong></p>
           </div>
         </div>
       `;
