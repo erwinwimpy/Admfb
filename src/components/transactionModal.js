@@ -80,15 +80,15 @@ export function renderTransactionModal() {
             <div class="form-group">
               <label class="form-label">Dibayar Oleh</label>
               <div class="chip-group" id="tx-paid-by-chips">
-                <button type="button" class="chip ${state.settings.togetherMode ? '' : 'selected'}" data-value="Suami">Suami</button>
-                <button type="button" class="chip ${state.settings.togetherMode ? 'selected' : ''}" data-value="Istri">Istri</button>
+                <button type="button" class="chip ${state.settings.togetherMode ? '' : 'selected'}" data-value="Erwin">Papa</button>
+                <button type="button" class="chip ${state.settings.togetherMode ? 'selected' : ''}" data-value="Nihad">Mama</button>
               </div>
             </div>
             <div class="form-group">
               <label class="form-label">Untuk Siapa</label>
               <div class="chip-group" id="tx-for-whom-chips">
-                <button type="button" class="chip" data-value="Suami">Suami</button>
-                <button type="button" class="chip" data-value="Istri">Istri</button>
+                <button type="button" class="chip" data-value="Erwin">Papa</button>
+                <button type="button" class="chip" data-value="Nihad">Mama</button>
                 <button type="button" class="chip" data-value="Anak">Anak</button>
                 <button type="button" class="chip ${state.settings.togetherMode ? 'selected' : ''}" data-value="Bersama">Bersama</button>
               </div>

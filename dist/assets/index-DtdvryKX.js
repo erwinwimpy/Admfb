@@ -14,7 +14,7 @@
         </div>
       </div>
     </header>
-  `}function ue(){const a=document.getElementById("together-toggle");a&&a.addEventListener("click",()=>{const t=c.toggleTogetherMode();a.classList.toggle("active",t);const n=a.querySelector(".together-toggle-icon"),s=a.querySelector(".together-toggle-label");n.textContent=t?"favorite":"favorite_border",s.textContent=t?"Together!":"Together",C(async()=>{const{showToast:i}=await Promise.resolve().then(()=>J);return{showToast:i}},void 0).then(({showToast:i})=>{i(t?"💕 Together Mode Aktif!":"Together Mode Nonaktif","info")})});const e=document.getElementById("profile-avatar");e&&e.addEventListener("click",()=>{const n=c.getState().settings.userName||"Erwin",s=n==="Erwin"?"Bunda":"Erwin";confirm(`Ganti sesi dari ${n} ke ${s}?`)&&(c.updateSettings({userName:s}),window.dispatchEvent(new Event("data-updated")),C(async()=>{const{showToast:i}=await Promise.resolve().then(()=>J);return{showToast:i}},void 0).then(({showToast:i})=>{i(`Berhasil login sebagai ${s}`,"success")}))})}const pe=[{path:"/",icon:"dashboard",label:"Beranda"},{path:"/transactions",icon:"receipt_long",label:"Transaksi"},{path:"/accounts",icon:"account_balance_wallet",label:"Rekening"},{path:"/assets",icon:"diamond",label:"Aset"},{path:"/insights",icon:"auto_awesome",label:"AI Insight"},{path:"/settings",icon:"settings",label:"Set"}];function me(){const a=M.getCurrentPath();return`
+  `}function ue(){const a=document.getElementById("together-toggle");a&&a.addEventListener("click",()=>{const t=c.toggleTogetherMode();a.classList.toggle("active",t);const n=a.querySelector(".together-toggle-icon"),s=a.querySelector(".together-toggle-label");n.textContent=t?"favorite":"favorite_border",s.textContent=t?"Together!":"Together",C(async()=>{const{showToast:i}=await Promise.resolve().then(()=>J);return{showToast:i}},void 0).then(({showToast:i})=>{i(t?"💕 Together Mode Aktif!":"Together Mode Nonaktif","info")})});const e=document.getElementById("profile-avatar");e&&e.addEventListener("click",()=>{const n=c.getState().settings.userName||"Erwin",s=n==="Erwin"?"Nihad":"Erwin";confirm(`Ganti sesi dari ${n} ke ${s}?`)&&(c.updateSettings({userName:s}),window.dispatchEvent(new Event("data-updated")),C(async()=>{const{showToast:i}=await Promise.resolve().then(()=>J);return{showToast:i}},void 0).then(({showToast:i})=>{i(`Berhasil login sebagai ${s}`,"success")}))})}const pe=[{path:"/",icon:"dashboard",label:"Beranda"},{path:"/transactions",icon:"receipt_long",label:"Transaksi"},{path:"/accounts",icon:"account_balance_wallet",label:"Rekening"},{path:"/assets",icon:"diamond",label:"Aset"},{path:"/insights",icon:"auto_awesome",label:"AI Insight"},{path:"/settings",icon:"settings",label:"Set"}];function me(){const a=M.getCurrentPath();return`
     <nav class="bottom-nav" id="bottom-nav">
       ${pe.map(e=>`
         <a class="nav-item ${a===e.path?"active":""}"
@@ -118,15 +118,15 @@
             <div class="form-group">
               <label class="form-label">Dibayar Oleh</label>
               <div class="chip-group" id="tx-paid-by-chips">
-                <button type="button" class="chip ${e.settings.togetherMode?"":"selected"}" data-value="Suami">Suami</button>
-                <button type="button" class="chip ${e.settings.togetherMode?"selected":""}" data-value="Istri">Istri</button>
+                <button type="button" class="chip ${e.settings.togetherMode?"":"selected"}" data-value="Erwin">Papa</button>
+                <button type="button" class="chip ${e.settings.togetherMode?"selected":""}" data-value="Nihad">Mama</button>
               </div>
             </div>
             <div class="form-group">
               <label class="form-label">Untuk Siapa</label>
               <div class="chip-group" id="tx-for-whom-chips">
-                <button type="button" class="chip" data-value="Suami">Suami</button>
-                <button type="button" class="chip" data-value="Istri">Istri</button>
+                <button type="button" class="chip" data-value="Erwin">Papa</button>
+                <button type="button" class="chip" data-value="Nihad">Mama</button>
                 <button type="button" class="chip" data-value="Anak">Anak</button>
                 <button type="button" class="chip ${e.settings.togetherMode?"selected":""}" data-value="Bersama">Bersama</button>
               </div>
@@ -279,9 +279,9 @@ INPUT: "${a||"Analisis gambar struk lampiran"}"`}];e&&d.push({inlineData:{mimeTy
         </div>
       `}).join(""),document.getElementById("scan-save-btn").style.display="flex"}catch(b){throw console.error(b,f),new Error("Gagal membaca data: "+b.message)}}function _e(a,e=1200){return new Promise((t,n)=>{const s=new Image;s.src=a,s.onload=()=>{const i=document.createElement("canvas");let o=s.width,r=s.height;o>e&&(r=Math.round(r*e/o),o=e),i.width=o,i.height=r,i.getContext("2d").drawImage(s,0,0,o,r),t(i.toDataURL("image/jpeg",.8))},s.onerror=n})}function Ie(){const a=c.getState(),e=new Date,t=a.settings.allowanceBudget||15e5,n=c.getAllowanceSpent(),s=Math.max(0,t-n),i=L(n,t),o=c.getDanaPusatBalance(),r=c.getMonthlyExpenses(e.getFullYear(),e.getMonth()),l=c.getMonthlyIncome(e.getFullYear(),e.getMonth());return`
     <div class="bento-grid stagger-children">
-      <!-- Pegangan Suami -->
+      <!-- Pegangan Papa -->
       <div class="card card-gradient" id="card-allowance">
-        <div class="card-title">💰 Pegangan ${a.settings.userName||"Suami"}</div>
+        <div class="card-title">💰 Pegangan ${a.settings.userName||"Papa"}</div>
         <div class="card-value">${m(s)}</div>
         <div class="card-subtitle">Terpakai ${m(n)} dari ${m(t)}</div>
         <div style="margin-top: 12px;">
@@ -296,7 +296,7 @@ INPUT: "${a||"Analisis gambar struk lampiran"}"`}];e&&d.push({inlineData:{mimeTy
       <div class="card card-gradient-gold" id="card-dana-pusat">
         <div class="card-title">🏦 Dana Pusat</div>
         <div class="card-value">${m(o)}</div>
-        <div class="card-subtitle">Dikelola oleh ${a.settings.spouseName||"Istri"}</div>
+        <div class="card-subtitle">Dikelola oleh ${a.settings.spouseName||"Mama"}</div>
       </div>
 
       <!-- Total Saldo -->
@@ -591,8 +591,8 @@ INPUT: "${a||"Analisis gambar struk lampiran"}"`}];e&&d.push({inlineData:{mimeTy
           <div class="form-group">
             <label class="form-label">Pemilik</label>
             <div class="chip-group" id="acc-owner-chips">
-              <button type="button" class="chip selected" data-value="Erwin">Erwin</button>
-              <button type="button" class="chip" data-value="Nihad">Nihad</button>
+              <button type="button" class="chip selected" data-value="Erwin">Papa (Erwin)</button>
+              <button type="button" class="chip" data-value="Nihad">Mama (Nihad)</button>
               <button type="button" class="chip" data-value="Bersama">Bersama</button>
             </div>
           </div>

@@ -19,9 +19,9 @@ export function renderSummaryCards() {
 
   return `
     <div class="bento-grid stagger-children">
-      <!-- Pegangan Suami -->
+      <!-- Pegangan Papa -->
       <div class="card card-gradient" id="card-allowance">
-        <div class="card-title">💰 Pegangan ${state.settings.userName || 'Suami'}</div>
+        <div class="card-title">💰 Pegangan ${state.settings.userName || 'Papa'}</div>
         <div class="card-value">${formatRupiah(allowanceRemaining)}</div>
         <div class="card-subtitle">Terpakai ${formatRupiah(allowanceSpent)} dari ${formatRupiah(allowanceBudget)}</div>
         <div style="margin-top: 12px;">
@@ -36,7 +36,7 @@ export function renderSummaryCards() {
       <div class="card card-gradient-gold" id="card-dana-pusat">
         <div class="card-title">🏦 Dana Pusat</div>
         <div class="card-value">${formatRupiah(danaPusat)}</div>
-        <div class="card-subtitle">Dikelola oleh ${state.settings.spouseName || 'Istri'}</div>
+        <div class="card-subtitle">Dikelola oleh ${state.settings.spouseName || 'Mama'}</div>
       </div>
 
       <!-- Total Saldo -->

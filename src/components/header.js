@@ -49,7 +49,7 @@ export function initHeaderEvents() {
     avatar.addEventListener('click', () => {
       const state = store.getState();
       const currentUser = state.settings.userName || 'Erwin';
-      const targetUser = currentUser === 'Erwin' ? 'Bunda' : 'Erwin';
+      const targetUser = currentUser === 'Erwin' ? 'Nihad' : 'Erwin';
       
       if (confirm(`Ganti sesi dari ${currentUser} ke ${targetUser}?`)) {
         store.updateSettings({ userName: targetUser });

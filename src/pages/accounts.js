@@ -82,8 +82,8 @@ function renderAccountModal() {
           <div class="form-group">
             <label class="form-label">Pemilik</label>
             <div class="chip-group" id="acc-owner-chips">
-              <button type="button" class="chip selected" data-value="Erwin">Erwin</button>
-              <button type="button" class="chip" data-value="Nihad">Nihad</button>
+              <button type="button" class="chip selected" data-value="Erwin">Papa (Erwin)</button>
+              <button type="button" class="chip" data-value="Nihad">Mama (Nihad)</button>
               <button type="button" class="chip" data-value="Bersama">Bersama</button>
             </div>
           </div>
