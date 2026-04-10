@@ -42,7 +42,7 @@ onAuthStateChanged(auth, async (user) => {
   
   if (user) {
     // Authenticated
-    await store.sync(user);
+    store.sync(user); // Don't await, let UI update when snapshot arrives
     if (currentPath === '/login') {
       router.navigate('/');
     } else {

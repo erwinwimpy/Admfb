@@ -76,22 +76,28 @@ class Store {
     this._userId = user.uid;
     const docRef = doc(db, 'families', user.uid);
     
-    // Initial load & check for migration
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-      // First time user, migrate local data if exists
-      const initialState = this._localData || defaultState;
-      await setDoc(docRef, initialState);
-      localStorage.removeItem(LOCAL_STORAGE_KEY); // Clean up after migration
-    }
-
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates IMMEDIATELY (non-blocking)
     this._unsubscribe = onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
         this._state = { ...defaultState, ...snap.data() };
         this._notify();
+      } else {
+        // Doc doesn't exist yet, trigger migration in background if needed
+        this._handleFirstTimeUser(docRef);
       }
     });
+
+    return Promise.resolve(); // Allow caller to proceed quickly
+  }
+
+  async _handleFirstTimeUser(docRef) {
+    // Check if doc still doesn't exist to avoid race conditions
+    const snap = await getDoc(docRef);
+    if (!snap.exists()) {
+      const initialState = this._localData || defaultState;
+      await setDoc(docRef, initialState);
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    }
   }
 
   _notify() {
