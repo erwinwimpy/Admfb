@@ -290,8 +290,8 @@ function handleAIError(err) {
   document.getElementById('scan-loading').style.display = 'none';
   document.getElementById('scan-result').style.display = 'block';
   let errMsg = '❌ Maaf, Gagal memproses AI. Silakan coba deksripsi yang lebih jelas.';
-  if (err.message && err.message.includes('403')) {
-    errMsg = '❌ API Key tidak valid atau telah diblokir limit. Hapus dan buat key yang baru.';
+  if (err.message && (err.message.includes('403') || err.message.includes('leaked'))) {
+    errMsg = '❌ API Key ini telah DIBLOKIR/DICABUT oleh Google karena dianggap bocor (Leaked Key). Silakan buat API Key BARU di Google AI Studio dan jangan berikan kepada siapapun di chat publik.';
     store.updateSettings({ geminiApiKey: '' }); // reset key
     setTimeout(() => {
         document.getElementById('ai-key-config').style.display = 'block';
@@ -305,34 +305,34 @@ function handleAIError(err) {
 }
 
 async function analyzeWithAI(rawText, base64Data, mimeType) {
-  const state = store.getState();
   const GEMINI_API_KEY = state.settings.geminiApiKey;
   if (!GEMINI_API_KEY) throw new Error("API Key Missing");
 
-  const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+  const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
   
   const categoryNames = CATEGORIES.map(c => c.name).join(', ');
   const accounts = store.getAccounts();
   const accountListStr = accounts.map(a => `- ID ${a.id}: ${a.bank_name} (${a.owner_name})`).join('\n');
 
-  const prompt = `Anda adalah Asisten Keuangan Keluarga 'Adam Family'. Tugas Anda mengekstrak transaksi dari cerita informal atau gambar struk.
+  const prompt = `Anda adalah Asisten Keuangan Keluarga 'Adam Family'. Tugas Anda mengekstrak transaksi dari cerita informal (bahasa gaul/sehari-hari) atau gambar struk.
 
 KONTEKS REKENING YANG TERSEDIA:
 ${accountListStr}
 
 ATURAN EKSTRAKSI:
-1. Pahami bahasa sehari-hari/gaul Indonesia (cth: jt=juta, rb=ribu, duit, sisaan, pake, dikasih, gajian).
+1. Sangat Pahami bahasa Indonesia informal/gaul (cth: jeti/jt=juta, rb/k=ribu, duit/dana/saldu, sisaan, pake, dikasih, gajian, pelicin, jajan, narik atm, dll).
 2. Lakukan perhitungan matematika jika ada kata 'sisanya' atau 'remainder'. 
    Contoh: "Gaji 5jt, sedekah 1jt, sisanya tabung" -> Transaksi 1: 5jt (Income), Transaksi 2: 1jt (Expense), Transaksi 3: 4jt (Transfer/Save).
-3. Hasil harus berupa JSON ARRAY valid ([ {...} ]) SAJA tanpa markdown.
+3. Sangat sensitif terhadap arah mutasi uang (Pemasukan vs Pengeluaran).
+4. Hasil harus berupa JSON ARRAY valid ([ {...} ]) SAJA tanpa markdown.
 
 STRUKTUR JSON ITEM:
 - "type": "expense", "income", atau "transfer"
-- "amount": angka integer murni (tanpa titik/huruf).
+- "amount": angka integer murni (tanpa titik/huruf). Pahami "4jt" = 4000000, "150rb" = 150000, "50k" = 50000.
 - "description": nama item/kegiatan.
 - "category": Jika expense pilih dari [${categoryNames}]. Jika income: "Gaji/Pendapatan". Jika transfer: "Mutasi".
-- "account_id": Pilih ID Rekening SUMBER dari daftar di atas yang paling cocok. Jika tidak disebutkan, gunakan ID dari rekening 'Tunai/Cash'.
-- "to_account_id": (Hanya jika type="transfer") ID Rekening TUJUAN.
+- "account_id": Pilih ID Rekening SUMBER (Darimana uangnya). Jika tidak disebutkan, gunakan Rekening 'Tunai' atau ID yang paling logis.
+- "to_account_id": (Hanya jika type="transfer") ID Rekening TUJUAN (Ke mana uangnya).
 
 INPUT: "${rawText || 'Analisis gambar struk lampiran'}"`;
 
