@@ -128,13 +128,13 @@ export function initScanModalEvents() {
     }
   }
 
-  btnSaveKey?.addEventListener('click', () => {
+  btnSaveKey?.addEventListener('click', async () => {
     const v = inputKey.value.trim();
     if (!v) {
       showToast('API Key tidak boleh kosong', 'error');
       return;
     }
-    store.updateSettings({ geminiApiKey: v });
+    await store.updateSettings({ geminiApiKey: v });
     showToast('API Key Berhasil Disimpan');
     checkKeySetup();
   });

@@ -30,8 +30,9 @@ export function renderHeader() {
 export function initHeaderEvents() {
   const toggle = document.getElementById('together-toggle');
   if (toggle) {
-    toggle.addEventListener('click', () => {
-      const active = store.toggleTogetherMode();
+    toggle.addEventListener('click', async () => {
+      const active = await store.toggleTogetherMode();
+      // Update UI will be handled by data-updated event, but we can reflect immediately too
       toggle.classList.toggle('active', active);
       const icon = toggle.querySelector('.together-toggle-icon');
       const label = toggle.querySelector('.together-toggle-label');
