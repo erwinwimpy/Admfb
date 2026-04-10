@@ -305,32 +305,36 @@ function handleAIError(err) {
 }
 
 async function analyzeWithAI(rawText, base64Data, mimeType) {
-  const GEMINI_API_KEY = store.getState().settings.geminiApiKey;
+  const state = store.getState();
+  const GEMINI_API_KEY = state.settings.geminiApiKey;
   if (!GEMINI_API_KEY) throw new Error("API Key Missing");
 
-  const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-  const categoryNames = CATEGORIES.map(c => c.name).join(', ');
-
-  const prompt = `Secara mendalam analisis ${rawText ? 'teks/cerita' : 'gambar struk'} berikut terkait pencatatan pengeluaran. Ekstrak rincian keuangan ke dalam format array JSON Object valid ([ { ... }, { ... } ]) TANPA block markdown.
+  const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
   
-Informasi Input Teks: "${rawText || 'via gambar/struk'}"
+  const categoryNames = CATEGORIES.map(c => c.name).join(', ');
+  const accounts = store.getAccounts();
+  const accountListStr = accounts.map(a => `- ID ${a.id}: ${a.bank_name} (${a.owner_name})`).join('\n');
 
-Setiap item JSON merepresentasikan SATU transaksi. Harus memiliki kunci berikut:
+  const prompt = `Anda adalah Asisten Keuangan Keluarga 'Adam Family'. Tugas Anda mengekstrak transaksi dari cerita informal atau gambar struk.
+
+KONTEKS REKENING YANG TERSEDIA:
+${accountListStr}
+
+ATURAN EKSTRAKSI:
+1. Pahami bahasa sehari-hari/gaul Indonesia (cth: jt=juta, rb=ribu, duit, sisaan, pake, dikasih, gajian).
+2. Lakukan perhitungan matematika jika ada kata 'sisanya' atau 'remainder'. 
+   Contoh: "Gaji 5jt, sedekah 1jt, sisanya tabung" -> Transaksi 1: 5jt (Income), Transaksi 2: 1jt (Expense), Transaksi 3: 4jt (Transfer/Save).
+3. Hasil harus berupa JSON ARRAY valid ([ {...} ]) SAJA tanpa markdown.
+
+STRUKTUR JSON ITEM:
 - "type": "expense", "income", atau "transfer"
-- "amount": angka total integer murni (tanpa huruf/titik/koma). Pahami "4jt" atau "4 juta" = 4000000, "400000" = 400000, dll.
-- "description": deskripsi/nama item transaksi ini
-- "merchant": nama toko (jika ada)
-- "date": estimasi tanggal format YYYY-MM-DD
-- "category": Jika expense wajib persis salah satu dari [${categoryNames}]. Jika income isi "Gaji" atau "Pendapatan". Jika transfer isi "Mutasi".
-- "sub_category": tebakan sub kategori
-- "account_guess": tebak rekening SUMBER uang. Kembalikan salah satu keyword: 'jago', 'bsi', 'bri', 'tunai'.
-- "to_account_guess": (Khusus jika type="transfer") tebak rekening TUJUAN uang.
+- "amount": angka integer murni (tanpa titik/huruf).
+- "description": nama item/kegiatan.
+- "category": Jika expense pilih dari [${categoryNames}]. Jika income: "Gaji/Pendapatan". Jika transfer: "Mutasi".
+- "account_id": Pilih ID Rekening SUMBER dari daftar di atas yang paling cocok. Jika tidak disebutkan, gunakan ID dari rekening 'Tunai/Cash'.
+- "to_account_id": (Hanya jika type="transfer") ID Rekening TUJUAN.
 
-Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
-[
-  { "type": "income", "amount": 4000000, "description": "Gaji Bulanan", "category": "Gaji", "account_guess": "bri" },
-  { "type": "transfer", "amount": 1500000, "description": "Mutasi ke Jago", "category": "Mutasi", "account_guess": "bri", "to_account_guess": "jago" }
-]`;
+INPUT: "${rawText || 'Analisis gambar struk lampiran'}"`;
 
   let parts = [{ text: prompt }];
 
@@ -353,8 +357,12 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
   });
 
   if (!response.ok) {
-     if (response.status === 403) throw new Error("403 Forbidden: API Key Invalid or Leaked");
-     throw new Error("HTTP Error " + response.status);
+     const errorData = await response.json().catch(() => ({}));
+     const msg = errorData.error?.message || response.statusText;
+     if (response.status === 403) throw new Error("403 Forbidden: API Key Problem");
+     if (response.status === 404) throw new Error("404 Not Found: Model name error");
+     if (response.status === 503) throw new Error("503 Service Busy: Server Google penuh, coba lagi sesaat lagi.");
+     throw new Error(`HTTP Error ${response.status}: ${msg}`);
   }
 
   const data = await response.json();
@@ -365,34 +373,29 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
 
   try {
     const jsonMatch = text.match(/\[[\s\S]*\]/) || text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON Array found");
+    if (!jsonMatch) throw new Error("AI memberikan respon teks saja, bukan data transaksi.");
 
     let parsed = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(parsed)) parsed = [parsed];
     parsedDataArray = parsed;
 
     if (parsedDataArray.length === 0) {
-      throw new Error("Parsed data is empty");
+      throw new Error("Data transaksi kosong.");
     }
 
     document.getElementById('scan-ai-text').innerHTML = `
-      <strong>✅ AI Berhasil Memahami!</strong><br/>
-      Ditemukan ${parsedDataArray.length} transaksi yang diekstrak.
+      <strong>✨ AI Selesai Menganalisis!</strong><br/>
+      Saya menemukan ${parsedDataArray.length} transaksi dari cerita Anda.
     `;
-
-    const accounts = store.getAccounts();
 
     // Show mapped boxes
     const parsedDiv = document.getElementById('scan-parsed-data');
     parsedDiv.style.display = 'block';
     
     parsedDiv.innerHTML = parsedDataArray.map(tx => {
-      let matchedBankStr = 'Tunai (Otomatis)';
-      if (tx.account_guess) {
-        const guess = tx.account_guess.toLowerCase();
-        const found = accounts.find(a => a.bank_name.toLowerCase().includes(guess));
-        if (found) matchedBankStr = found.bank_name;
-      }
+      const sourceAcc = accounts.find(a => a.id == tx.account_id) || { bank_name: 'Unknown' };
+      const destAcc = tx.to_account_id ? accounts.find(a => a.id == tx.to_account_id) : null;
+      
       return `
         <div style="background: var(--surface-container); border-radius: var(--radius-md); padding: 12px; margin-top: 12px; border: 1px solid var(--outline-variant);">
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -401,8 +404,8 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
           </div>
           <div style="font-size: 13px; color: var(--on-surface-variant);">
             <p>📝 <strong>${tx.description || '-'}</strong></p>
-            <p>📂 ${tx.category || '-'} → ${tx.sub_category || '-'}</p>
-            <p>💳 Menggunakan: <strong>${matchedBankStr} ${tx.to_account_guess ? ' ➡️ ' + tx.to_account_guess.toUpperCase() : ''}</strong></p>
+            <p>📂 ${tx.category || '-'} ${tx.sub_category ? '→ ' + tx.sub_category : ''}</p>
+            <p>💳 Rekening: <strong>${sourceAcc.bank_name} ${destAcc ? '➡️ ' + destAcc.bank_name : ''}</strong></p>
           </div>
         </div>
       `;
@@ -411,7 +414,7 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
     document.getElementById('scan-save-btn').style.display = 'flex';
   } catch (parseErr) {
     console.error(parseErr, text);
-    throw new Error("Parsing Error: " + parseErr.message);
+    throw new Error("Gagal membaca data: " + parseErr.message);
   }
 }
 
