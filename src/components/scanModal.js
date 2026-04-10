@@ -309,7 +309,7 @@ Informasi Input Teks: "${rawText || 'via gambar/struk'}"
 
 Setiap item JSON merepresentasikan SATU transaksi. Harus memiliki kunci berikut:
 - "type": "expense", "income", atau "transfer"
-- "amount": angka total transaksi ini (tanpa koma/huruf)
+- "amount": angka total integer murni (tanpa huruf/titik/koma). Pahami "4jt" atau "4 juta" = 4000000, "400000" = 400000, dll.
 - "description": deskripsi/nama item transaksi ini
 - "merchant": nama toko (jika ada)
 - "date": estimasi tanggal format YYYY-MM-DD
