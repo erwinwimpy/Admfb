@@ -318,8 +318,8 @@ Pastikan merespon hanya dengan RAW JSON Array saja, contoh:
 
   if (base64Data) {
     parts.push({
-      inline_data: {
-        mime_type: mimeType || 'image/jpeg',
+      inlineData: {
+        mimeType: mimeType || 'image/jpeg',
         data: base64Data
       }
     });
