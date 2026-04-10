@@ -83,10 +83,16 @@ export function initLoginPageEvents() {
       }
     } catch (error) {
       console.error(error);
-      let msg = 'Gagal memproses cloud sync. Coba lagi nanti.';
-      if (error.code === 'auth/wrong-password') msg = 'Password salah (mohon cek config).';
-      if (error.code === 'auth/network-request-failed') msg = 'Koneksi internet bermasalah.';
-      showToast('❌ ' + msg, 'error');
+      let msg = `Gagal: ${error.code || 'Unknown Error'}`;
+      if (error.code === 'auth/operation-not-allowed') {
+        msg = '⚠️ Error: Email/Password belum diaktifkan di Firebase Console!';
+      } else if (error.code === 'auth/invalid-api-key') {
+        msg = '⚠️ Error: API Key Firebase tidak valid!';
+      } else if (error.code === 'auth/network-request-failed') {
+        msg = '⚠️ Error: Koneksi internet bermasalah.';
+      }
+      
+      showToast(msg, 'error');
       btnSubmit.disabled = false;
       btnSubmit.innerText = 'Hubungkan ke Brankas Cloud';
     }
