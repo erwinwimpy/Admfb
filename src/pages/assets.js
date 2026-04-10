@@ -470,15 +470,15 @@ export function initAssetsPageEvents() {
   });
 
   document.querySelectorAll('.btn-delete-arisan').forEach(btn => {
-    btn.onclick = () => {
+    btn.addEventListener('click', () => {
       if(confirm('Hapus arisan ini?')) {
         store.deleteArisan(btn.dataset.id);
         window.dispatchEvent(new CustomEvent('data-updated'));
       }
-    };
+    });
   });
 
-  document.getElementById('form-arisan')?.onsubmit = (e) => {
+  document.getElementById('form-arisan')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = document.getElementById('arisan-id').value;
     const data = {
@@ -493,14 +493,14 @@ export function initAssetsPageEvents() {
     else store.addArisan(data);
     window.dispatchEvent(new CustomEvent('data-updated'));
     closeAll();
-  };
+  });
 
   document.querySelectorAll('.btn-delete-custom').forEach(btn => {
-    btn.onclick = () => {
+    btn.addEventListener('click', () => {
       if(confirm('Hapus aset kustom ini?')) {
         store.deleteCustomAsset(btn.dataset.id);
         window.dispatchEvent(new CustomEvent('data-updated'));
       }
-    };
+    });
   });
 }
