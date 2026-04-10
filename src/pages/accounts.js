@@ -179,6 +179,7 @@ function getBankClass(bankName) {
   if (n.includes('bri')) return 'bri';
   if (n.includes('jago')) return 'jago';
   if (n.includes('bsi')) return 'bsi';
+  if (n.includes('tunai') || n.includes('cash')) return 'tunai';
   return 'default';
 }
 
@@ -187,5 +188,6 @@ function getBankShort(bankName) {
   if (n.includes('bri')) return 'BRI';
   if (n.includes('jago')) return 'JGO';
   if (n.includes('bsi')) return 'BSI';
+  if (n.includes('tunai') || n.includes('cash')) return 'CSH';
   return bankName.slice(0, 3).toUpperCase();
 }

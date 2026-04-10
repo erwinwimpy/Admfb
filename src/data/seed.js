@@ -7,6 +7,17 @@ import store from './store.js';
 const SEED_VERSION = 4;
 
 export function seedData() {
+  // Migration for existing users
+  const currentAccounts = store.getState().accounts;
+  if (currentAccounts.length > 0) {
+    if (!currentAccounts.some(a => a.bank_name === 'Dompet Tunai Suami')) {
+      store.addAccount({ bank_name: 'Dompet Tunai Suami', owner_name: 'Suami', balance: 500000, is_allowance_account: true, css_class: 'tunai' });
+    }
+    if (!currentAccounts.some(a => a.bank_name === 'Dompet Tunai Istri')) {
+      store.addAccount({ bank_name: 'Dompet Tunai Istri', owner_name: 'Istri', balance: 1000000, is_allowance_account: true, css_class: 'tunai' });
+    }
+  }
+
   // Force re-seed if version changed
   const storedVersion = localStorage.getItem('cipta_seed_version');
   if (storedVersion && parseInt(storedVersion) >= SEED_VERSION && store.getState().accounts.length > 0) return;
@@ -51,6 +62,22 @@ export function seedData() {
     balance: 12000000,
     is_allowance_account: false,
     css_class: 'bsi'
+  });
+
+  const cashSuamiId = store.addAccount({
+    bank_name: 'Dompet Tunai Suami',
+    owner_name: 'Suami',
+    balance: 500000,
+    is_allowance_account: true,
+    css_class: 'tunai'
+  });
+
+  const cashIstriId = store.addAccount({
+    bank_name: 'Dompet Tunai Istri',
+    owner_name: 'Istri',
+    balance: 1000000,
+    is_allowance_account: true,
+    css_class: 'tunai'
   });
 
   // Assets

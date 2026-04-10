@@ -479,6 +479,7 @@ ul, ol {
 .bank-card.bri::before { background: #003d79; }
 .bank-card.jago::before { background: #ffd700; }
 .bank-card.bsi::before { background: #00723f; }
+.bank-card.tunai::before { background: #4caf50; }
 
 .bank-card:hover {
   border-color: var(--primary);
@@ -502,6 +503,7 @@ ul, ol {
 .bank-card-icon.bri { background: linear-gradient(135deg, #003d79, #0056a8); }
 .bank-card-icon.jago { background: linear-gradient(135deg, #f5a623, #ffd700); color: #333; }
 .bank-card-icon.bsi { background: linear-gradient(135deg, #00723f, #00a65a); }
+.bank-card-icon.tunai { background: linear-gradient(135deg, #4caf50, #2e7d32); }
 .bank-card-icon.default { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
 
 .bank-card-name {
