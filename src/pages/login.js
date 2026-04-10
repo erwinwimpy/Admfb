@@ -13,94 +13,83 @@ import { showToast } from '../utils/helpers.js';
 export function renderLoginPage() {
   return `
     <div class="page-container animate-fade-in" style="display: flex; align-items: center; justify-content: center; min-height: 80vh;">
-      <div class="card" style="width: 100%; max-width: 400px; padding: 32px;">
-        <div style="text-align: center; margin-bottom: 32px;">
+      <div class="card" style="width: 100%; max-width: 400px; padding: 32px; text-align: center;">
+        <div style="margin-bottom: 32px;">
           <div style="background: var(--primary); color: white; width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 16px rgba(var(--primary-rgb), 0.3);">
-            <span class="material-icons-round" style="font-size: 32px;">account_balance_wallet</span>
+            <span class="material-icons-round" style="font-size: 32px;">cloud_sync</span>
           </div>
-          <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface);">Adam Family</h1>
-          <p style="color: var(--on-surface-variant); font-size: 14px;">Aplikasi Keuangan Masa Depan</p>
-        </div>
-
-        <!-- Tabs -->
-        <div class="chip-group" style="margin-bottom: 24px;">
-           <button class="chip selected" id="tab-login" style="flex: 1; justify-content: center;">Masuk</button>
-           <button class="chip" id="tab-register" style="flex: 1; justify-content: center;">Daftar Baru</button>
+          <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--on-surface);">Aktivasi Cloud Sync</h1>
+          <p style="color: var(--on-surface-variant); font-size: 14px; margin-top: 8px;">
+            Menghubungkan HP Papa & Mama ke database keluarga terpusat.
+          </p>
         </div>
 
         <form id="login-form">
-          <div class="form-group">
+          <div class="form-group" style="text-align: left;">
             <label class="form-label">Email Keluarga</label>
-            <input type="email" class="form-input" id="login-email" placeholder="keluarga@adam.com" required />
+            <input type="email" class="form-input" id="login-email" value="erwinwimpy@gmail.com" readonly style="background: var(--surface-container); color: var(--on-surface-variant);" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" class="form-input" id="login-password" placeholder="••••••••" required />
+          <div class="form-group" style="text-align: left; margin-bottom: 24px;">
+            <label class="form-label">PIN / Password Keluarga</label>
+            <input type="password" class="form-input" id="login-password" value="adam123" readonly style="background: var(--surface-container); color: var(--on-surface-variant);" />
           </div>
-          <button type="submit" class="btn btn-primary btn-block" style="padding: 16px; font-weight: 700; margin-top: 12px;" id="btn-login-submit">
-            Masuk ke Dashboard
+
+          <button type="submit" class="btn btn-primary btn-block" style="padding: 18px; font-weight: 700;" id="btn-login-submit">
+            Hubungkan ke Brankas Cloud
           </button>
         </form>
 
-        <p id="login-footer" style="text-align: center; font-size: 12px; color: var(--on-surface-variant); margin-top: 24px;">
-          Gunakan satu akun untuk Papa & Mama
-        </p>
+        <div style="margin-top: 24px; padding: 12px; background: #e3f2fd; border-radius: 12px; border: 1px dashed #2196f3;">
+           <p style="font-size: 11px; color: #1565c0; line-height: 1.5; margin: 0;">
+             <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">verified</span> 
+             Gunakan tombol di atas pada HP Papa dan HP Mama untuk mensinkronkan data secara real-time.
+           </p>
+        </div>
       </div>
     </div>
   `;
 }
 
 export function initLoginPageEvents() {
-  let mode = 'login';
-  const tabLogin = document.getElementById('tab-login');
-  const tabReg = document.getElementById('tab-register');
   const btnSubmit = document.getElementById('btn-login-submit');
-  const footer = document.getElementById('login-footer');
-
-  tabLogin?.addEventListener('click', () => {
-    mode = 'login';
-    tabLogin.classList.add('selected');
-    tabReg.classList.remove('selected');
-    btnSubmit.innerText = 'Masuk ke Dashboard';
-    footer.innerText = 'Gunakan satu akun untuk Papa & Mama';
-  });
-
-  tabReg?.addEventListener('click', () => {
-    mode = 'register';
-    tabReg.classList.add('selected');
-    tabLogin.classList.remove('selected');
-    btnSubmit.innerText = 'Buat Akun Keluarga';
-    footer.innerText = 'Data lokal akan otomatis dipindahkan ke Cloud';
-  });
 
   document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
+    const email = "erwinwimpy@gmail.com";
+    const password = "adam123";
 
     try {
       btnSubmit.disabled = true;
-      btnSubmit.innerText = 'Memproses...';
+      btnSubmit.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; border-width: 2px; margin: 0 auto;"></div>';
 
-      if (mode === 'login') {
+      // First trial: Try Login
+      try {
         await signInWithEmailAndPassword(auth, email, password);
-        showToast('✅ Berhasil Masuk!');
-      } else {
-        const userCred = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCred.user, { displayName: 'Adam Family' });
-        showToast('✅ Akun Berhasil Dibuat!');
+        showToast('✅ Berhasil Terhubung ke Cloud!');
+      } catch (err) {
+        // If not found, try register (one-click activation)
+        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+          try {
+            const userCred = await createUserWithEmailAndPassword(auth, email, password);
+            await updateProfile(userCred.user, { displayName: 'Keluarga Adam' });
+            showToast('✨ Brankas Cloud Berhasil Diaktifkan!');
+          } catch (regErr) {
+            // Re-throw if it's already someone else's email or other error
+            throw regErr;
+          }
+        } else {
+          throw err;
+        }
       }
-      
-      // The auth observer in app.js will handle redirect
     } catch (error) {
       console.error(error);
-      let msg = 'Gagal memproses data';
-      if (error.code === 'auth/wrong-password') msg = 'Password salah';
-      if (error.code === 'auth/user-not-found') msg = 'Email tidak terdaftar';
-      if (error.code === 'auth/email-already-in-use') msg = 'Email sudah digunakan';
+      let msg = 'Gagal memproses cloud sync. Coba lagi nanti.';
+      if (error.code === 'auth/wrong-password') msg = 'Password salah (mohon cek config).';
+      if (error.code === 'auth/network-request-failed') msg = 'Koneksi internet bermasalah.';
       showToast('❌ ' + msg, 'error');
       btnSubmit.disabled = false;
-      btnSubmit.innerText = mode === 'login' ? 'Masuk ke Dashboard' : 'Buat Akun Keluarga';
+      btnSubmit.innerText = 'Hubungkan ke Brankas Cloud';
     }
   });
 }
+
