@@ -9,7 +9,8 @@ const NAV_ITEMS = [
   { path: '/transactions', icon: 'receipt_long', label: 'Transaksi' },
   { path: '/accounts', icon: 'account_balance_wallet', label: 'Rekening' },
   { path: '/assets', icon: 'diamond', label: 'Aset' },
-  { path: '/insights', icon: 'auto_awesome', label: 'AI Insight' }
+  { path: '/insights', icon: 'auto_awesome', label: 'AI Insight' },
+  { path: '/settings', icon: 'settings', label: 'Set' }
 ];
 
 export function renderBottomNav() {

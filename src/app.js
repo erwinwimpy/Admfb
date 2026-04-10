@@ -16,6 +16,7 @@ import { renderTransactionsPage, initTransactionsPageEvents } from './pages/tran
 import { renderAccountsPage, initAccountsPageEvents } from './pages/accounts.js';
 import { renderAssetsPage, initAssetsPageEvents } from './pages/assets.js';
 import { renderInsightsPage, initInsightsPageEvents } from './pages/insights.js';
+import { renderSettingsPage, initSettingsPageEvents } from './pages/settings.js';
 
 const app = document.getElementById('app');
 
@@ -25,7 +26,8 @@ const pages = {
   '/transactions': { render: renderTransactionsPage, init: initTransactionsPageEvents },
   '/accounts': { render: renderAccountsPage, init: initAccountsPageEvents },
   '/assets': { render: renderAssetsPage, init: initAssetsPageEvents },
-  '/insights': { render: renderInsightsPage, init: initInsightsPageEvents }
+  '/insights': { render: renderInsightsPage, init: initInsightsPageEvents },
+  '/settings': { render: renderSettingsPage, init: initSettingsPageEvents }
 };
 
 function renderPage(path) {

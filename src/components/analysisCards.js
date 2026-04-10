@@ -14,15 +14,15 @@ export function renderAnalysisCards() {
   const kpr = state.assets.kpr;
   const kprPercent = percentage(kpr.paid, kpr.total);
 
-  // Bensin LDM Budget (estimate 600rb/bulan)
-  const bensinBudget = 600000;
+  // Transportasi Budget
+  const bensinBudget = state.settings.transportBudget || 600000;
   const bensinSpent = txs
     .filter(t => t.type === 'expense' && t.parent_category === 'Transportasi')
     .reduce((s, t) => s + t.amount, 0);
   const bensinPercent = percentage(bensinSpent, bensinBudget);
 
-  // Keperluan Anak Budget (estimate 800rb/bulan)
-  const anakBudget = 800000;
+  // Keperluan Anak Budget
+  const anakBudget = state.settings.anakBudget || 800000;
   const anakSpent = txs
     .filter(t => t.type === 'expense' && t.for_whom === 'Anak')
     .reduce((s, t) => s + t.amount, 0);

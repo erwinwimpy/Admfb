@@ -8,17 +8,26 @@ const defaultState = {
   family: null,
   accounts: [],
   transactions: [],
-  assets: {
-    emas: { bsi_gram: 0, tring_gram: 0, price_per_gram: 1650000 },
-    kpr: { total: 0, paid: 0, monthly: 0, bank: '', remaining_months: 0 },
-    arisan: []
-  },
   settings: {
     togetherMode: false,
     allowanceBudget: 1500000,
+    transportBudget: 600000,
+    anakBudget: 800000,
     userName: 'Erwin',
     spouseName: 'Nihad',
     geminiApiKey: ''
+  },
+  // Klasifikasi Aturan 50/30/20
+  budgetRules: {
+    needs: ['Rumah Tangga', 'Transportasi', 'Pendidikan Anak', 'Kesehatan', 'Cicilan'],
+    wants: ['Hiburan', 'Pakaian & Fashion', 'Makanan & Minuman'], // Makanan & Minuman will be split in logic
+    savings: ['Investasi', 'Sosial & Ibadah']
+  },
+  assets: {
+    emas: { bsi_gram: 0, tring_gram: 0, price_per_gram: 1650000 },
+    kpr: { total: 0, paid: 0, monthly: 0, bank: '', remaining_months: 0 },
+    arisan: [],
+    custom: [] // Fitur aset baru
   },
   categories: []
 };
@@ -268,6 +277,103 @@ class Store {
       map[cat] = (map[cat] || 0) + t.amount;
     });
     return Object.entries(map).map(([name, amount]) => ({ name, amount })).sort((a, b) => b.amount - a.amount);
+  }
+
+  getBudgetPerformance() {
+    const now = new Date();
+    const txs = this.getTransactionsByMonth(now.getFullYear(), now.getMonth()).filter(t => t.type === 'expense');
+    const rules = this._state.budgetRules;
+    
+    let needs = 0, wants = 0, savings = 0;
+    
+    txs.forEach(t => {
+      const cat = t.parent_category;
+      const sub = t.sub_category || '';
+      
+      if (rules.needs.includes(cat)) {
+        needs += t.amount;
+      } else if (rules.savings.includes(cat)) {
+        savings += t.amount;
+      } else if (rules.wants.includes(cat)) {
+        // Special case for Food: Groceries/Harian = Needs, Outside/Cafe = Wants
+        if (cat === 'Makanan & Minuman') {
+          if (['Makan di Luar', 'Cemilan', 'Kopi & Minuman'].includes(sub)) {
+            wants += t.amount;
+          } else {
+            needs += t.amount;
+          }
+        } else {
+          wants += t.amount;
+        }
+      } else {
+        needs += t.amount; // Default to needs for safety
+      }
+    });
+
+    const total = needs + wants + savings;
+    return { needs, wants, savings, total };
+  }
+
+  // --- Custom Assets ---
+  addCustomAsset(asset) {
+    const id = Date.now().toString(36);
+    this._state.assets.custom.push({ id, ...asset });
+    this._save();
+    return id;
+  }
+
+  updateCustomAsset(id, updates) {
+    const idx = this._state.assets.custom.findIndex(a => a.id === id);
+    if (idx !== -1) {
+      this._state.assets.custom[idx] = { ...this._state.assets.custom[idx], ...updates };
+      this._save();
+    }
+  }
+
+  deleteCustomAsset(id) {
+    this._state.assets.custom = this._state.assets.custom.filter(a => a.id !== id);
+    this._save();
+  }
+
+  // --- Quick Payment Helper ---
+  payAssetMonthly(type, id, accountId) {
+    const state = this._state;
+    let amount = 0;
+    let desc = "";
+    let cat = "Cicilan";
+
+    if (type === 'kpr') {
+      amount = state.assets.kpr.monthly;
+      desc = `Cicilan KPR ${state.assets.kpr.bank} (Bulan ini)`;
+      this.updateKPR({ paid: state.assets.kpr.paid + amount, remaining_months: state.assets.kpr.remaining_months - 1 });
+    } else if (type === 'arisan') {
+      const arisan = state.assets.arisan.find(a => a.id === id);
+      if (arisan) {
+        amount = arisan.monthly_amount;
+        desc = `Iuran Arisan ${arisan.name}`;
+        cat = "Sosial & Ibadah";
+        this.updateArisan(id, { current_round: arisan.current_round + 1 });
+      }
+    } else if (type === 'custom') {
+      const asset = state.assets.custom.find(a => a.id === id);
+      if (asset) {
+        amount = asset.monthly_amount || 0;
+        desc = `Cicilan ${asset.name}`;
+        this.updateCustomAsset(id, { paid: (asset.paid || 0) + amount });
+      }
+    }
+
+    if (amount > 0) {
+      this.addTransaction({
+        account_id: accountId,
+        amount,
+        type: 'expense',
+        description: desc,
+        parent_category: cat,
+        paid_by: state.settings.userName,
+        for_whom: 'Bersama'
+      });
+    }
   }
 
   // --- Reset ---

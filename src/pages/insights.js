@@ -58,6 +58,12 @@ export function renderInsightsPage() {
 
       <!-- Spending Patterns -->
       <div class="section-header" style="margin-top: 24px;">
+        <h2 class="section-title">Snapshot 50 / 30 / 20</h2>
+      </div>
+      
+      ${renderBudgetRuleChart()}
+
+      <div class="section-header" style="margin-top: 24px;">
         <h2 class="section-title">Pola Pengeluaran</h2>
       </div>
 
@@ -192,6 +198,55 @@ function generateInsights() {
   });
 
   return insights;
+}
+
+function renderBudgetRuleChart() {
+  const perf = store.getBudgetPerformance();
+  const total = perf.total || 1;
+  const pNeeds = Math.round((perf.needs / total) * 100);
+  const pWants = Math.round((perf.wants / total) * 100);
+  const pSavings = Math.round((perf.savings / total) * 100);
+
+  return `
+    <div class="card" style="padding: 20px;">
+      <div style="font-size: 13px; color: var(--on-surface-variant); margin-bottom: 20px; text-align: center;">
+        Target Ideal: <b style="color: var(--primary);">50%</b> Pokok | <b style="color: var(--tertiary);">30%</b> Keinginan | <b style="color: var(--success);">20%</b> Investasi
+      </div>
+
+      <div style="height: 32px; width: 100%; display: flex; border-radius: 16px; overflow: hidden; background: var(--surface-container); margin-bottom: 24px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="width: ${pNeeds}%; background: var(--primary); transition: width 1s ease;"></div>
+        <div style="width: ${pWants}%; background: var(--tertiary); transition: width 1s ease;"></div>
+        <div style="width: ${pSavings}%; background: var(--success); transition: width 1s ease;"></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+        <div style="text-align: center;">
+          <div style="font-size: 20px; font-weight: 800; color: var(--primary);">${pNeeds}%</div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--on-surface-variant);">KEBUTUHAN</div>
+          <div style="font-size: 10px; color: var(--outline); margin-top: 2px;">${formatRupiah(perf.needs, true)}</div>
+        </div>
+        <div style="text-align: center; border-left: 1px solid var(--outline-variant); border-right: 1px solid var(--outline-variant);">
+          <div style="font-size: 20px; font-weight: 800; color: var(--tertiary);">${pWants}%</div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--on-surface-variant);">KEINGINAN</div>
+          <div style="font-size: 10px; color: var(--outline); margin-top: 2px;">${formatRupiah(perf.wants, true)}</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 20px; font-weight: 800; color: var(--success);">${pSavings}%</div>
+          <div style="font-size: 11px; font-weight: 700; color: var(--on-surface-variant);">INVESTASI</div>
+          <div style="font-size: 10px; color: var(--outline); margin-top: 2px;">${formatRupiah(perf.savings, true)}</div>
+        </div>
+      </div>
+
+      ${pWants > 30 ? `
+        <div style="margin-top: 20px; padding: 12px; background: #fffcf0; border: 1px solid #ffe082; border-radius: var(--radius-md); display: flex; gap: 12px; align-items: flex-start;">
+          <span class="material-icons-round" style="color: #f57c00; font-size: 20px;">priority_high</span>
+          <div style="font-size: 12px; color: #5d4037; line-height: 1.5;">
+            <b>Waspada!</b> Alokasi keinginan Anda (<b>${pWants}%</b>) sudah melebihi batas ideal 30%. Coba cek jajan di luar atau belanja impulsif bulan ini.
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
 }
 
 function renderSpendingPatterns() {
