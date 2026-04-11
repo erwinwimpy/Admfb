@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { path: '/accounts', icon: 'account_balance_wallet', label: 'Rekening' },
   { path: '/assets', icon: 'diamond', label: 'Aset' },
   { path: '/insights', icon: 'auto_awesome', label: 'AI Insight' },
-  { path: '/settings', icon: 'settings', label: 'Set' }
+  { path: '/reports', icon: 'assessment', label: 'Laporan' }
 ];
 
 export function renderBottomNav() {

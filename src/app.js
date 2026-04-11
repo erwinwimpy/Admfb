@@ -16,6 +16,7 @@ import { renderAccountsPage, initAccountsPageEvents } from './pages/accounts.js'
 import { renderAssetsPage, initAssetsPageEvents } from './pages/assets.js';
 import { renderInsightsPage, initInsightsPageEvents } from './pages/insights.js';
 import { renderSettingsPage, initSettingsPageEvents } from './pages/settings.js';
+import { renderReportsPage, initReportsPageEvents } from './pages/reports.js';
 import { renderLoginPage, initLoginPageEvents } from './pages/login.js';
 import { auth } from './data/firebase.js';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -30,6 +31,7 @@ const pages = {
   '/accounts': { render: renderAccountsPage, init: initAccountsPageEvents },
   '/assets': { render: renderAssetsPage, init: initAssetsPageEvents },
   '/insights': { render: renderInsightsPage, init: initInsightsPageEvents },
+  '/reports': { render: renderReportsPage, init: initReportsPageEvents },
   '/settings': { render: renderSettingsPage, init: initSettingsPageEvents },
   '/login': { render: renderLoginPage, init: initLoginPageEvents }
 };
@@ -56,6 +58,25 @@ onAuthStateChanged(auth, async (user) => {
   isAuthInit = true;
 });
 
+function ensureShell() {
+  if (document.getElementById('main-content')) return;
+
+  app.innerHTML = `
+    ${renderHeader()}
+    ${renderBottomNav()}
+    <main id="main-content"></main>
+    ${renderQuickAction()}
+    ${renderTransactionModal()}
+    ${renderScanModal()}
+  `;
+
+  // Init global components once
+  initHeaderEvents();
+  initQuickActionEvents();
+  initTransactionModalEvents();
+  initScanModalEvents();
+}
+
 function renderPage(path) {
   const page = pages[path] || pages['/'];
 
@@ -65,21 +86,14 @@ function renderPage(path) {
     return;
   }
 
-  app.innerHTML = `
-    ${renderHeader()}
-    ${renderBottomNav()}
-    ${page.render()}
-    ${renderQuickAction()}
-    ${renderTransactionModal()}
-    ${renderScanModal()}
-  `;
+  // Ensure consistent base structure
+  ensureShell();
 
-  // Init events
-  initHeaderEvents();
-  initQuickActionEvents();
-  initTransactionModalEvents();
-  initScanModalEvents();
-  page.init();
+  const mainContent = document.getElementById('main-content');
+  if (mainContent) {
+    mainContent.innerHTML = page.render();
+    page.init();
+  }
 
   // Update active nav
   updateActiveNav(path);

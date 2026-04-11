@@ -14,9 +14,14 @@ export function renderScanModal() {
       <div class="modal-content">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <h2 class="modal-title" style="margin-bottom: 0;">🤖 Adam Family AI</h2>
-          <button id="btn-force-config" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">
-            <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">settings</span> Ganti Key
-          </button>
+          <div style="display: flex; gap: 8px;">
+            <button id="btn-force-config" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;">
+              <span class="material-icons-round" style="font-size: 14px; vertical-align: middle;">settings</span> Key
+            </button>
+            <button type="button" id="scan-modal-close" class="btn-icon">
+              <span class="material-icons-round">close</span>
+            </button>
+          </div>
         </div>
 
         <!-- API Key Setup (Hanya tampil jika kosong) -->
@@ -78,10 +83,14 @@ export function renderScanModal() {
 
           <div id="scan-parsed-data" style="display: none; max-height: 250px; overflow-y: auto; padding-right: 4px;"></div>
 
-          <button class="btn btn-primary btn-block" id="scan-save-btn" style="display: none; margin-top: 16px;">
-            <span class="material-icons-round">save</span>
-            Simpan Semua Transaksi
-          </button>
+          <!-- Bottom Actions -->
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 16px;">
+            <button type="button" class="btn btn-secondary" id="scan-cancel">Batal</button>
+            <button class="btn btn-primary" id="scan-save-btn" style="display: none;">
+              <span class="material-icons-round">save</span>
+              Simpan Transaksi
+            </button>
+          </div>
         </div>
 
         <!-- Loading -->
@@ -183,10 +192,14 @@ export function initScanModalEvents() {
     resetAIUI();
   });
 
-  backdrop?.addEventListener('click', () => {
+  const closeModal = () => {
     backdrop?.classList.remove('open');
     sheet?.classList.remove('open');
-  });
+  };
+
+  backdrop?.addEventListener('click', closeModal);
+  document.getElementById('scan-modal-close')?.addEventListener('click', closeModal);
+  document.getElementById('scan-cancel')?.addEventListener('click', closeModal);
 
   // Text Analytics trigger
   document.getElementById('btn-analyze-text')?.addEventListener('click', async () => {

@@ -17,7 +17,12 @@ export function renderTransactionModal() {
     <div class="modal-sheet" id="tx-modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-content">
-        <h2 class="modal-title" id="tx-modal-title">Tambah Transaksi</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-lg);">
+          <h2 class="modal-title" id="tx-modal-title" style="margin-bottom: 0;">Tambah Transaksi</h2>
+          <button type="button" id="tx-modal-close" class="btn-icon">
+            <span class="material-icons-round">close</span>
+          </button>
+        </div>
 
         <form id="tx-form">
           <!-- Type Chips -->
@@ -102,10 +107,13 @@ export function renderTransactionModal() {
           </div>
 
           <!-- Submit -->
-          <button type="submit" class="btn btn-primary btn-block" style="margin-top: 16px;" id="tx-submit">
-            <span class="material-icons-round">save</span>
-            Simpan Transaksi
-          </button>
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 24px;">
+            <button type="button" class="btn btn-secondary" id="tx-cancel">Batal</button>
+            <button type="submit" class="btn btn-primary" id="tx-submit">
+              <span class="material-icons-round">save</span>
+              Simpan
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -122,8 +130,10 @@ export function initTransactionModalEvents() {
     openModal(e.detail?.type || 'expense');
   });
 
-  // Close on backdrop click
+  // Close events
   backdrop?.addEventListener('click', closeModal);
+  document.getElementById('tx-modal-close')?.addEventListener('click', closeModal);
+  document.getElementById('tx-cancel')?.addEventListener('click', closeModal);
 
   // Type chips
   document.querySelectorAll('#tx-type-chips .chip').forEach(chip => {

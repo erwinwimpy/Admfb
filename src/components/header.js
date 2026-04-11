@@ -53,12 +53,14 @@ export function initHeaderEvents() {
       const currentUser = state.settings.userName || 'Papa';
       const targetUser = currentUser === 'Papa' ? 'Mama' : 'Papa';
       
-      const action = prompt(`Pilih aksi untuk ${currentUser}:\n1. Ganti User ke ${targetUser}\n2. Keluar (Logout)\n\nKetik angka (1/2):`, "1");
+      const action = prompt(`Menu Akun (${currentUser}):\n1. Pengaturan Aplikasi\n2. Ganti User ke ${targetUser}\n3. Keluar (Logout)\n\nKetik angka (1/2/3):`, "1");
       
       if (action === "1") {
+        window.location.hash = "/settings";
+      } else if (action === "2") {
         store.updateSettings({ userName: targetUser });
         window.dispatchEvent(new Event('data-updated'));
-      } else if (action === "2") {
+      } else if (action === "3") {
         window.dispatchEvent(new Event('logout'));
       }
     });
