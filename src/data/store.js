@@ -2,20 +2,8 @@
 // CIPTA Finansial — Data Store (Cloud Sync)
 // ============================================
 
-import { auth, db } from './firebase.js';
-import { 
-  doc, 
-  setDoc, 
-  getDoc, 
-  onSnapshot, 
-  updateDoc, 
-  arrayUnion, 
-  arrayRemove,
-  collection,
-  query,
-  orderBy,
-  limit
-} from 'firebase/firestore';
+// Removed Firebase imports for MySQL Migration
+import { showToast } from '../utils/helpers.js';
 
 const LOCAL_STORAGE_KEY = 'cipta_finansial_data';
 
@@ -30,7 +18,7 @@ const defaultState = {
     anakBudget: 800000,
     userName: 'Papa',
     spouseName: 'Mama',
-    geminiApiKey: ''
+    geminiApiKey: 'AIzaSyDFayE9DTMo4hai7W3KdU__aUFT7pA5XPw'
   },
   budgetRules: {
     needs: ['Rumah Tangga', 'Transportasi', 'Pendidikan Anak', 'Kesehatan', 'Cicilan'],
@@ -64,40 +52,29 @@ class Store {
     } catch { return null; }
   }
 
-  async sync(user) {
-    if (!user) {
+  async sync() {
+    // PHP/MySQL Sync Logic
+    const isLoggedIn = localStorage.getItem('family_is_logged_in') === 'true';
+    if (!isLoggedIn) {
       this._state = { ...defaultState };
-      this._userId = null;
-      if (this._unsubscribe) this._unsubscribe();
       this._notify();
       return;
     }
 
-    this._userId = user.uid;
-    const docRef = doc(db, 'families', user.uid);
-    
-    // Subscribe to real-time updates IMMEDIATELY (non-blocking)
-    this._unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-        this._state = { ...defaultState, ...snap.data() };
-        this._notify();
-      } else {
-        // Doc doesn't exist yet, trigger migration in background if needed
-        this._handleFirstTimeUser(docRef);
-      }
-    });
-
-    return Promise.resolve(); // Allow caller to proceed quickly
-  }
-
-  async _handleFirstTimeUser(docRef) {
-    // Check if doc still doesn't exist to avoid race conditions
-    const snap = await getDoc(docRef);
-    if (!snap.exists()) {
-      const initialState = this._localData || defaultState;
-      await setDoc(docRef, initialState);
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    // Load from LocalStorage for Demo (GitHub)
+    // In Production: This would fetch from api/sync.php
+    const local = this._loadLocal();
+    if (local) {
+      this._state = { ...defaultState, ...local };
+      
+      // Override userName from Login identity
+      const identity = localStorage.getItem('family_user_name');
+      if (identity) this._state.settings.userName = identity;
+      
+      this._notify();
     }
+    
+    return Promise.resolve();
   }
 
   _notify() {
@@ -115,20 +92,14 @@ class Store {
     return this._state;
   }
 
-  // --- Remote Writes ---
-  async _updateCloud(updates) {
-    if (!this._userId) {
-      console.error("Cloud Sync Error: No User ID");
-      import('../utils/helpers.js').then(h => h.showToast('⚠️ Hubungkan ke Cloud dulu!', 'error'));
-      return;
-    }
-    const docRef = doc(db, 'families', this._userId);
-    try {
-      await updateDoc(docRef, updates);
-    } catch (e) {
-      console.error("Firestore Update Failed:", e);
-      import('../utils/helpers.js').then(h => h.showToast(`❌ Gagal Simpan: ${e.code || 'Permission Denied'}`, 'error'));
-    }
+  // --- Data Persistence ---
+  async _persist(updates) {
+    this._state = { ...this._state, ...updates };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(this._state));
+    this._notify();
+
+    // Call PHP API if not in Demo Mode
+    // await fetch('api/sync.php?action=update', { ... });
   }
 
   // --- Settings ---
@@ -189,7 +160,7 @@ class Store {
       if (tx.to_account_id) updateBal(tx.to_account_id, tx.amount);
     }
 
-    await this._updateCloud({ 
+    this._persist({ 
       transactions: newTransactions,
       accounts: newAccounts
     });
@@ -214,7 +185,7 @@ class Store {
       if (tx.to_account_id) updateBal(tx.to_account_id, -tx.amount);
     }
 
-    await this._updateCloud({ 
+    this._persist({ 
       transactions: newTransactions,
       accounts: newAccounts
     });
